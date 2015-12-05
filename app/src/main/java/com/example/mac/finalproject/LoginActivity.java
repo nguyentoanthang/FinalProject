@@ -1,6 +1,7 @@
 package com.example.mac.finalproject;
 
 import android.app.ProgressDialog;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -11,6 +12,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.parse.Parse;
+import com.parse.ParseObject;
 
 import butterknife.ButterKnife;
 import butterknife.Bind;
@@ -29,7 +33,9 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
+        Parse.enableLocalDatastore(this);
 
+        Parse.initialize(this, "jJ8QrqEcY6pcPWkpcFM72gAH8DRCQ2OL8yltmsif", "MVCSDgySMy6h71zkLFSKlLURqHgiJT4WvH3dPGbH");
         _loginButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -89,7 +95,7 @@ public class LoginActivity extends AppCompatActivity {
 
                 // TODO: Implement successful signup logic here
                 // By default we just finish the Activity and log them in automatically
-                this.finish();
+                Toast.makeText(LoginActivity.this, "SignUpSuccess", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -133,4 +139,6 @@ public class LoginActivity extends AppCompatActivity {
 
         return valid;
     }
+
+
 }

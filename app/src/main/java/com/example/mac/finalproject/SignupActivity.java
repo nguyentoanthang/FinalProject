@@ -1,6 +1,7 @@
 package com.example.mac.finalproject;
 
 import android.app.ProgressDialog;
+import android.app.backup.BackupDataOutput;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -16,7 +17,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.parse.Parse;
+import com.parse.ParseException;
 import com.parse.ParseObject;
+import com.parse.ParseUser;
+import com.parse.SignUpCallback;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -93,7 +97,6 @@ public class SignupActivity extends AppCompatActivity {
 
     public void onErrorInternet() {
         Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
-        progressDialog.dismiss();
         _signupButton.setEnabled(true);
     }
 
@@ -130,8 +133,6 @@ public class SignupActivity extends AppCompatActivity {
 
     private class NetCheck extends AsyncTask<String, String, Boolean> {
 
-
-
         @Override
         protected void onPostExecute(Boolean th) {
             if (th == true) {
@@ -144,7 +145,6 @@ public class SignupActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressDialog.show();
         }
 
         @Override
@@ -171,36 +171,40 @@ public class SignupActivity extends AppCompatActivity {
         }
     }
 
-    private class ProcessRegister extends AsyncTask<String, String, Boolean> {
+    private class ProcessRegister extends AsyncTask<Void, Void, Void> {
 
         String name, email, password;
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
+            progressDialog.show();
             name = _nameText.getText().toString();
             email = _emailText.getText().toString();
             password = _passwordText.getText().toString();
         }
 
         @Override
-        protected void onPostExecute(Boolean aBoolean) {
+        protected Void doInBackground(Void... params) {
 
-            if (aBoolean == true) {
-                onSignupSuccess();
-            }
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-
-            ParseObject newUser = new ParseObject("User");
+            ParseUser newUser = new ParseUser();
+            newUser.setUsername(email);
+            newUser.setEmail(email);
+            newUser.setPassword(password);
             newUser.put("Name", name);
-            newUser.put("Email", email);
-            newUser.put("Pass", password);
-            newUser.saveInBackground();
-
-            return true;
+            newUser.signUpInBackground(new SignUpCallback() {
+                @Override
+                public void done(ParseException e) {
+                    if (e == null) {
+                        onSignupSuccess();
+                    } else {
+                        if (e.getCode() == ParseException.USERNAME_TAKEN) {
+                            _emailText.setError("This email has been used");
+                        }
+                        onSignupFailed();
+                    }
+                }
+            });
+            return null;
         }
     }
 }

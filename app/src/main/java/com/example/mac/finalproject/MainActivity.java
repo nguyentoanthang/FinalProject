@@ -30,8 +30,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Parse.enableLocalDatastore(this);
-        Parse.initialize(this, "jJ8QrqEcY6pcPWkpcFM72gAH8DRCQ2OL8yltmsif", "MVCSDgySMy6h71zkLFSKlLURqHgiJT4WvH3dPGbH");
+
         ButterKnife.bind(this);
         currentUser = ParseUser.getCurrentUser();
 

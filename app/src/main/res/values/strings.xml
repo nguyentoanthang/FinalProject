@@ -5,4 +5,9 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="title_activity_singup">SignupActivity</string>
+    <string name="nav_item_profile">Profile</string>
+    <string name="nav_item_location">My Location</string>
+    <string name="nav_sub_menu_item01">Project</string>
+    <string name="nav_sub_menu_item02">Logout</string>
+    <string name="nav_sub_menu">PROJECT</string>
 </resources>

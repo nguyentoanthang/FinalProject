@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -28,9 +29,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.parse.GetCallback;
 import com.parse.Parse;
+import com.parse.ParseException;
+import com.parse.ParseFile;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.parse.SaveCallback;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -48,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.drawer_layout) DrawerLayout drawerLayout;
     @Bind(R.id.navigation_view) NavigationView navigationView;
     private static final int REQUEST_LOGIN = 0;
+    private static final int REQUEST_IMAGE_CAPTURE = 1;
+    private static final int REQUEST_IMAGE_SELECT = 2;
     TextView name, email;
     ImageView profile_image;
     View headerView;
@@ -113,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
     private void UpdateUI() {
         name.setText(currentUser.getString("Name"));
         email.setText(currentUser.getEmail());
+
     }
 
     private void showInputDialog() {
@@ -169,18 +180,44 @@ public class MainActivity extends AppCompatActivity {
                     UpdateUI();
                 }
             }
-        } else if (requestCode == 1){
+        } else if (requestCode == REQUEST_IMAGE_CAPTURE){
             if (resultCode == RESULT_OK) {
+                try {
+                    InputStream inputStream = MainActivity.this.getContentResolver().openInputStream(data.getData());
+                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
 
+                    profile_image.setImageBitmap(bitmap);
+                } catch (OutOfMemoryError e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
+                        e.printStackTrace();
+                }
             }
+
         } else if (requestCode == 2){
             if (resultCode == RESULT_OK) {
                 try {
-                    Toast.makeText(MainActivity.this, "vgregs", Toast.LENGTH_SHORT).show();
                     InputStream inputStream = MainActivity.this.getContentResolver().openInputStream(data.getData());
                     Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                    profile_image.setImageBitmap(Bitmap
-                            .createScaledBitmap(bitmap, 70, 70, false));//here set your image
+                    profile_image.setImageBitmap(bitmap);//here set your image
+
+                    //new UploadImage().execute(bitmap);
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    // Compress image to lower quality scale 1 - 100
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    byte[] image = stream.toByteArray();
+
+                    // Create the ParseFile
+                    ParseFile file = new ParseFile("thang.png", image);
+                    // Upload the image into Parse Cloud
+                    file.saveInBackground();
+                    Toast.makeText(MainActivity.this, "thang", Toast.LENGTH_SHORT).show();
+                    //ParseObject user = new ParseObject("ProfileImage");
+                    //user.put("email", currentUser.getEmail());
+                    //user.put("image", file);
+                    //user.saveInBackground();
+                    currentUser.put("avatar", file);
+                    currentUser.saveInBackground();
                 } catch (OutOfMemoryError e) {
                     e.printStackTrace();
                 } catch (Exception e) {
@@ -251,19 +288,16 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int item) {
 
                 if (options[item].equals("Take Photo")) {
-                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-                    File f = new File(android.os.Environment.getExternalStorageDirectory(), "temp.jpg");
-
-                    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
-                    //pic = f;
-                    startActivityForResult(intent, 1);
+                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                    }
                 }
 
                 else if (options[item].equals("Choose from Gallery")) {
                     Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
                     intent.setType("image/*");
-                    startActivityForResult(intent, 2);
+                    startActivityForResult(intent, REQUEST_IMAGE_SELECT);
                 }
 
                 else if (options[item].equals("Cancel")) {
@@ -272,5 +306,31 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         builder.show();
+    }
+
+    private class UploadImage extends AsyncTask<Bitmap, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Bitmap... params) {
+            Bitmap bitmap = params[0];
+
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            // Compress image to lower quality scale 1 - 100
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            byte[] image = stream.toByteArray();
+
+            // Create the ParseFile
+            ParseFile file = new ParseFile("thang.png", image);
+            // Upload the image into Parse Cloud
+            file.saveInBackground();
+            Toast.makeText(MainActivity.this, "thang", Toast.LENGTH_SHORT).show();
+            //ParseObject user = new ParseObject("ProfileImage");
+            //user.put("email", currentUser.getEmail());
+            //user.put("image", file);
+            //user.saveInBackground();
+            currentUser.put("avatar", file);
+            currentUser.saveInBackground();
+            return null;
+        }
     }
 }

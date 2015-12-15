@@ -10,4 +10,6 @@
     <string name="nav_sub_menu_item01">Project</string>
     <string name="nav_sub_menu_item02">Logout</string>
     <string name="nav_sub_menu">PROJECT</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
 </resources>

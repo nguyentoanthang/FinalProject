@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item android:title="User">
         <menu>
             <item
                 android:id="@+id/navigation_item_images"
-                android:icon="@drawable/ic_image"
+                android:icon="@drawable/ic_profile"
                 android:title="@string/nav_item_profile" />
             <item
                 android:id="@+id/navigation_item_location"
@@ -17,6 +18,10 @@
 
     <item android:title="@string/nav_sub_menu">
         <menu>
+            <item
+                android:title="New Project"
+                android:id="@+id/project"
+                app:actionLayout="@layout/project_row"/>
             <item
                 android:icon="@drawable/ic_emoticon"
                 android:title="@string/nav_sub_menu_item01" />

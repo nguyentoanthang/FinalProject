@@ -108,6 +108,7 @@ public class LoginActivity extends AppCompatActivity {
     public void onLoginSuccess() {
         _loginButton.setEnabled(true);
         progressDialog.dismiss();
+        setResult(RESULT_OK, null);
         finish();
     }
 

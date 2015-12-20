@@ -1,11 +1,14 @@
 package com.example.mac.finalproject;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -45,6 +48,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -61,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     TextView name, email;
     ImageView profile_image;
     View headerView;
+    private final String TAG = "TAG";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -199,25 +206,26 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     InputStream inputStream = MainActivity.this.getContentResolver().openInputStream(data.getData());
                     Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                    profile_image.setImageBitmap(bitmap);//here set your image
 
-                    //new UploadImage().execute(bitmap);
-                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+                    NetCheck check = new NetCheck(bitmap);
+
+                    check.execute();
+
+
+                    //ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     // Compress image to lower quality scale 1 - 100
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                    byte[] image = stream.toByteArray();
+                    //bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    //byte[] image = stream.toByteArray();
 
                     // Create the ParseFile
-                    ParseFile file = new ParseFile("thang.png", image);
+                    //ParseFile file = new ParseFile("thang.png", image);
                     // Upload the image into Parse Cloud
-                    file.saveInBackground();
-                    Toast.makeText(MainActivity.this, "thang", Toast.LENGTH_SHORT).show();
-                    //ParseObject user = new ParseObject("ProfileImage");
-                    //user.put("email", currentUser.getEmail());
-                    //user.put("image", file);
-                    //user.saveInBackground();
-                    currentUser.put("avatar", file);
-                    currentUser.saveInBackground();
+                    //file.saveInBackground();
+                    //Toast.makeText(MainActivity.this, "thang", Toast.LENGTH_SHORT).show();
+
+                    //currentUser.put("avatar", file);
+                    //currentUser.saveInBackground();
                 } catch (OutOfMemoryError e) {
                     e.printStackTrace();
                 } catch (Exception e) {
@@ -308,11 +316,16 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private class UploadImage extends AsyncTask<Bitmap, Void, Void> {
+    private class UploadImage extends AsyncTask<Void, Void, Void> {
+
+        Bitmap bitmap;
+
+        public UploadImage(Bitmap bitmap) {
+            this.bitmap = bitmap;
+        }
 
         @Override
-        protected Void doInBackground(Bitmap... params) {
-            Bitmap bitmap = params[0];
+        protected Void doInBackground(Void... params) {
 
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             // Compress image to lower quality scale 1 - 100
@@ -323,14 +336,91 @@ public class MainActivity extends AppCompatActivity {
             ParseFile file = new ParseFile("thang.png", image);
             // Upload the image into Parse Cloud
             file.saveInBackground();
-            Toast.makeText(MainActivity.this, "thang", Toast.LENGTH_SHORT).show();
-            //ParseObject user = new ParseObject("ProfileImage");
-            //user.put("email", currentUser.getEmail());
-            //user.put("image", file);
-            //user.saveInBackground();
+
             currentUser.put("avatar", file);
             currentUser.saveInBackground();
+
             return null;
         }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            profile_image.setImageBitmap(bitmap);//here set your image
+        }
+    }
+
+    private class PullingData extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            return null;
+        }
+    }
+
+    private class NetCheck extends AsyncTask<String, String, Boolean> {
+
+        Bitmap bitmap;
+
+        public NetCheck(Bitmap bitmap) {
+            this.bitmap = bitmap;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean th) {
+            if (th == true) {
+                new UploadImage(bitmap).execute();
+            } else {
+                onErrorInternet();
+            }
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo netInfo = cm.getActiveNetworkInfo();
+            if(netInfo != null && netInfo.isConnected()) {
+                try {
+                    URL url = new URL("http://www.google.com");
+                    HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+                    urlc.setConnectTimeout(3000);
+                    urlc.connect();
+                    if (urlc.getResponseCode() == 200) {
+                        return true;
+                    }
+                } catch (MalformedURLException e1) {
+                    e1.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return false;
+        }
+    }
+
+    public void onErrorInternet() {
+        Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
     }
 }

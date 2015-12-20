@@ -4,17 +4,18 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+<<<<<<< HEAD
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+=======
+>>>>>>> origin/master
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -22,7 +23,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,20 +32,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.parse.GetCallback;
-import com.parse.Parse;
-import com.parse.ParseException;
 import com.parse.ParseFile;
-import com.parse.ParseObject;
-import com.parse.ParseQuery;
 import com.parse.ParseUser;
-import com.parse.SaveCallback;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -190,9 +182,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (requestCode == REQUEST_IMAGE_CAPTURE){
             if (resultCode == RESULT_OK) {
                 try {
-                    InputStream inputStream = MainActivity.this.getContentResolver().openInputStream(data.getData());
-                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-
+                    Bitmap bitmap = (Bitmap) data.getExtras().get("data");
                     profile_image.setImageBitmap(bitmap);
                 } catch (OutOfMemoryError e) {
                     e.printStackTrace();

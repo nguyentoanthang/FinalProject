@@ -20,6 +20,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,6 +30,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.parse.GetDataCallback;
+import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseUser;
 
@@ -101,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
                 if (item.getItemId() == R.id.logout) {
                     ParseUser.logOut();
                     Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                    startActivity(intent);
+                    startActivityForResult(intent, REQUEST_LOGIN);
                 } else if (item.getItemId() == R.id.project) {
 
                 }
@@ -110,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (currentUser != null) {
-            UpdateUI();
+            new PullingData().execute();
         } else {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivityForResult(intent, REQUEST_LOGIN);
@@ -172,9 +175,9 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == REQUEST_LOGIN) {
             if (resultCode == RESULT_OK) {
-               currentUser = ParseUser.getCurrentUser();
+                currentUser = ParseUser.getCurrentUser();
                 if (currentUser != null) {
-                    UpdateUI();
+                    new PullingData().execute();
                 }
             }
         } else if (requestCode == REQUEST_IMAGE_CAPTURE){
@@ -340,6 +343,11 @@ public class MainActivity extends AppCompatActivity {
 
     private class PullingData extends AsyncTask<Void, Void, Void> {
 
+        String _name;
+        String _email;
+        Bitmap _bitmap;
+        boolean image;
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -353,11 +361,37 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
-
+            name.setText(_name);
+            email.setText(_email);
+            if (image == true) {
+                profile_image.setImageBitmap(_bitmap);
+            } else {
+                Toast.makeText(MainActivity.this, "faile to get profile image", Toast.LENGTH_SHORT).show();
+            }
         }
 
         @Override
         protected Void doInBackground(Void... params) {
+
+            _name = currentUser.getString("Name");
+            _email = currentUser.getEmail();
+            ParseFile fileImage = (ParseFile) currentUser.get("avatar");
+            fileImage.getDataInBackground(new GetDataCallback() {
+                @Override
+                public void done(byte[] data, ParseException e) {
+                    if (e == null) {
+                        _bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        image = true;
+                        Log.d(TAG, "onE=null");
+                        publishProgress();
+                    } else {
+                        image = false;
+                        Log.d(TAG, e.toString());
+                        publishProgress();
+                    }
+                }
+            });
+
             return null;
         }
     }

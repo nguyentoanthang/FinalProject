@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.app.backup.BackupDataOutput;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -77,8 +78,14 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        new NetCheck().execute();
-        _signupButton.setEnabled(false);
+        CheckInternet check = new CheckInternet(SignupActivity.this);
+        if(check.isOnline()) {
+            new ProcessRegister().execute();
+            _signupButton.setEnabled(false);
+        } else {
+            onErrorInternet();
+        }
+
     }
 
 
@@ -129,46 +136,6 @@ public class SignupActivity extends AppCompatActivity {
         }
 
         return valid;
-    }
-
-    private class NetCheck extends AsyncTask<String, String, Boolean> {
-
-        @Override
-        protected void onPostExecute(Boolean th) {
-            if (th == true) {
-                new ProcessRegister().execute();
-            } else {
-                onErrorInternet();
-            }
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-
-            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo netInfo = cm.getActiveNetworkInfo();
-            if(netInfo != null && netInfo.isConnected()) {
-                try {
-                    URL url = new URL("http://www.google.com");
-                    HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-                    urlc.setConnectTimeout(3000);
-                    urlc.connect();
-                    if (urlc.getResponseCode() == 200) {
-                        return true;
-                    }
-                } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return false;
-        }
     }
 
     private class ProcessRegister extends AsyncTask<Void, Void, Void> {

@@ -1,18 +1,18 @@
 package com.example.mac.finalproject;
 
 import android.app.AlertDialog;
-import android.content.Context;
+
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.support.v4.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -20,7 +20,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,17 +32,14 @@ import android.widget.Toast;
 import com.parse.GetDataCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
+import com.parse.ParseObject;
 import com.parse.ParseUser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -61,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     ImageView profile_image;
     View headerView;
     private final String TAG = "TAG";
+    ProjectFragment projectFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,6 +109,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        registerReceiver(new NetworkStateChange(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
+        projectFragment = new ProjectFragment();
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.frame, projectFragment);
+        fragmentTransaction.commit();
+
         if (currentUser != null) {
             new PullingData().execute();
         } else {
@@ -120,28 +124,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void UpdateUI() {
-        name.setText(currentUser.getString("Name"));
-        email.setText(currentUser.getEmail());
-
-    }
-
     private void showInputDialog() {
         LayoutInflater layoutInflater = LayoutInflater.from(MainActivity.this);
         View dialogView = layoutInflater.inflate(R.layout.input_dialog, null);
-        int currentVersion = Build.VERSION.SDK_INT;
+        final int currentVersion = Build.VERSION.SDK_INT;
         final AlertDialog.Builder alertDialog;
+        final EditText projectName;
         if (currentVersion >= 20) {
             alertDialog = new AlertDialog.Builder(MainActivity.this, R.style.AppCompatAlertDialogStyle);
             alertDialog.setView(dialogView);
             alertDialog.setTitle("Enter project name");
-            final EditText projectName = (EditText) dialogView.findViewById(R.id.input_projectname);
+            projectName = (EditText) dialogView.findViewById(R.id.input_projectname);
             projectName.setTextColor(getResources().getColor(R.color.white));
         } else {
             alertDialog = new AlertDialog.Builder(MainActivity.this);
             alertDialog.setView(dialogView);
             alertDialog.setTitle("Enter project name");
-            final EditText projectName = (EditText) dialogView.findViewById(R.id.input_projectname);
+            projectName = (EditText) dialogView.findViewById(R.id.input_projectname);
         }
 
 
@@ -149,7 +148,12 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                ParseObject newProject = new ParseObject("Project");
+                newProject.put("Name", projectName.getText().toString());
 
+                newProject.put("User", currentUser);
+
+                newProject.saveInBackground();
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
@@ -199,9 +203,13 @@ public class MainActivity extends AppCompatActivity {
                     Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
 
 
-                    NetCheck check = new NetCheck(bitmap);
+                    CheckInternet check = new CheckInternet(MainActivity.this);
 
-                    check.execute();
+                    if (check.isOnline()) {
+                        new UploadImage(bitmap).execute();
+                    } else {
+                        onErrorInternet();
+                    }
 
 
                     //ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -244,30 +252,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    public File savebitmap(Bitmap bmp) {
-        String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
-        OutputStream outStream = null;
-        // String temp = null;
-        File file = new File(extStorageDirectory, "temp.png");
-        if (file.exists()) {
-            file.delete();
-            file = new File(extStorageDirectory, "temp.png");
-
-        }
-
-        try {
-            outStream = new FileOutputStream(file);
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, outStream);
-            outStream.flush();
-            outStream.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        return file;
     }
 
     private void selectImage() {
@@ -373,72 +357,30 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... params) {
 
-            _name = currentUser.getString("Name");
-            _email = currentUser.getEmail();
-            ParseFile fileImage = (ParseFile) currentUser.get("avatar");
-            fileImage.getDataInBackground(new GetDataCallback() {
-                @Override
-                public void done(byte[] data, ParseException e) {
-                    if (e == null) {
-                        _bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                        image = true;
-                        Log.d(TAG, "onE=null");
-                        publishProgress();
-                    } else {
-                        image = false;
-                        Log.d(TAG, e.toString());
-                        publishProgress();
+            CheckInternet check = new CheckInternet(MainActivity.this);
+
+            if (check.isOnline()) {
+                _name = currentUser.getString("Name");
+                _email = currentUser.getEmail();
+                ParseFile fileImage = (ParseFile) currentUser.get("avatar");
+                fileImage.getDataInBackground(new GetDataCallback() {
+                    @Override
+                    public void done(byte[] data, ParseException e) {
+                        if (e == null) {
+                            _bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                            image = true;
+                            publishProgress();
+                        } else {
+                            image = false;
+                            publishProgress();
+                        }
                     }
-                }
-            });
-
-            return null;
-        }
-    }
-
-    private class NetCheck extends AsyncTask<String, String, Boolean> {
-
-        Bitmap bitmap;
-
-        public NetCheck(Bitmap bitmap) {
-            this.bitmap = bitmap;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean th) {
-            if (th == true) {
-                new UploadImage(bitmap).execute();
+                });
             } else {
                 onErrorInternet();
             }
-        }
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-
-            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo netInfo = cm.getActiveNetworkInfo();
-            if(netInfo != null && netInfo.isConnected()) {
-                try {
-                    URL url = new URL("http://www.google.com");
-                    HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-                    urlc.setConnectTimeout(3000);
-                    urlc.connect();
-                    if (urlc.getResponseCode() == 200) {
-                        return true;
-                    }
-                } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return false;
+            return null;
         }
     }
 

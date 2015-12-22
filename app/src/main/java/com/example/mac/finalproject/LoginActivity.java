@@ -81,9 +81,14 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        _loginButton.setEnabled(false);
+        CheckInternet check = new CheckInternet(LoginActivity.this);
 
-        new NetCheck().execute();
+        if (check.isOnline()) {
+            new ProcessLogin().execute();
+            _loginButton.setEnabled(false);
+        } else {
+            onErrorInternet();
+        }
     }
 
 
@@ -144,47 +149,6 @@ public class LoginActivity extends AppCompatActivity {
     public void onErrorInternet() {
         Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
         _loginButton.setEnabled(true);
-    }
-
-    private class NetCheck extends AsyncTask<String, String, Boolean> {
-
-        @Override
-        protected void onPostExecute(Boolean th) {
-            if (th == true) {
-                new ProcessLogin().execute();
-            } else {
-                onErrorInternet();
-            }
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-
-            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo netInfo = cm.getActiveNetworkInfo();
-            if(netInfo != null && netInfo.isConnected()) {
-                try {
-                    URL url = new URL("http://www.google.com");
-                    HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-                    urlc.setConnectTimeout(3000);
-                    urlc.connect();
-                    if (urlc.getResponseCode() == 200) {
-                        return true;
-                    }
-                } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return false;
-        }
     }
 
     private class ProcessLogin extends AsyncTask<Void, Void, Void> {

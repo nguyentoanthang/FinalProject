@@ -26,9 +26,9 @@ public class ProjectAdapter extends ArrayAdapter<Project> {
     public View getView(int position, View convertView, ViewGroup parent) {
         LayoutInflater layoutInflater = context.getLayoutInflater();
 
-        convertView = layoutInflater.inflate(R.layout.work_layout, null);
+        convertView = layoutInflater.inflate(layoutId, null);
 
-        final TextView name = (TextView) convertView.findViewById(R.id.nameOfproject);
+        final TextView name = (TextView) convertView.findViewById(R.id.nameProject);
 
         final  TextView done = (TextView) convertView.findViewById(R.id.doneWork);
 

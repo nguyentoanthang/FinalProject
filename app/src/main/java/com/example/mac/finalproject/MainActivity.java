@@ -1,7 +1,6 @@
 package com.example.mac.finalproject;
 
 import android.app.AlertDialog;
-
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.support.v4.app.FragmentTransaction;
@@ -9,7 +8,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,38 +24,38 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.parse.GetDataCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseUser;
-
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.ArrayList;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
 public class MainActivity extends AppCompatActivity {
 
-    ParseUser currentUser;
+    private ParseUser currentUser;
+    private ArrayList<Project> listProject = new ArrayList<>();
+    private ProjectAdapter adapter = null;
+    ListView lvProject = null;
     @Bind(R.id.toolbar) Toolbar toolbar;
     @Bind(R.id.drawer_layout) DrawerLayout drawerLayout;
     @Bind(R.id.navigation_view) NavigationView navigationView;
     private static final int REQUEST_LOGIN = 0;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_IMAGE_SELECT = 2;
-    TextView name, email;
-    ImageView profile_image;
-    View headerView;
+    private TextView name, email;
+    private ImageView profile_image;
+    private View headerView;
     private final String TAG = "TAG";
-    ProjectFragment projectFragment;
+    private ProjectFragment projectFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,6 +152,14 @@ public class MainActivity extends AppCompatActivity {
                 newProject.put("User", currentUser);
 
                 newProject.saveInBackground();
+
+                Project project = new Project();
+                project.setName(projectName.getText().toString());
+                project.setNumOfDone(0);
+
+                listProject.add(project);
+
+
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
@@ -210,21 +216,6 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         onErrorInternet();
                     }
-
-
-                    //ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    // Compress image to lower quality scale 1 - 100
-                    //bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                    //byte[] image = stream.toByteArray();
-
-                    // Create the ParseFile
-                    //ParseFile file = new ParseFile("thang.png", image);
-                    // Upload the image into Parse Cloud
-                    //file.saveInBackground();
-                    //Toast.makeText(MainActivity.this, "thang", Toast.LENGTH_SHORT).show();
-
-                    //currentUser.put("avatar", file);
-                    //currentUser.saveInBackground();
                 } catch (OutOfMemoryError e) {
                     e.printStackTrace();
                 } catch (Exception e) {

@@ -5,7 +5,7 @@
     <item android:title="User">
         <menu>
             <item
-                android:id="@+id/navigation_item_images"
+                android:id="@+id/navigation_item_profile"
                 android:icon="@drawable/ic_profile"
                 android:title="@string/nav_item_profile" />
             <item

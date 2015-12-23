@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private View headerView;
     private final String TAG = "TAG";
     private ProjectFragment projectFragment;
+    private HeaderFragment headerFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         profile_image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               selectImage();
+                selectImage();
             }
         });
 
@@ -101,7 +102,20 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                     startActivityForResult(intent, REQUEST_LOGIN);
                 } else if (item.getItemId() == R.id.project) {
-
+                    projectFragment = new ProjectFragment();
+                    FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    fragmentTransaction.replace(R.id.frame, projectFragment);
+                    fragmentTransaction.addToBackStack(null);
+                    fragmentTransaction.commit();
+                } else if (item.getItemId() == R.id.navigation_item_profile){
+                    Bundle bd = new Bundle();
+                    bd.putString("txt", "This is data from mainActivity");
+                    ProfileFragment profileFragment= new ProfileFragment();
+                    profileFragment.setArguments(bd);
+                    FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    fragmentTransaction.replace(R.id.frame, profileFragment);
+                    fragmentTransaction.addToBackStack(null);
+                    fragmentTransaction.commit();
                 }
                 return true;
             }
@@ -115,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.commit();
 
         if (currentUser != null) {
-            new PullingData().execute();
+            //new PullingData().execute();
         } else {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivityForResult(intent, REQUEST_LOGIN);
@@ -187,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 currentUser = ParseUser.getCurrentUser();
                 if (currentUser != null) {
-                    new PullingData().execute();
+                    //new PullingData().execute();
                 }
             }
         } else if (requestCode == REQUEST_IMAGE_CAPTURE){

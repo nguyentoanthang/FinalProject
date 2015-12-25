@@ -1,6 +1,7 @@
 package com.example.mac.finalproject;
 
 import android.app.Activity;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +37,7 @@ public class ProjectAdapter extends ArrayAdapter<Project> {
 
         name.setText(currentProject.getName());
 
-        done.setText(currentProject.getNumOfDone());
+        done.setText(String.valueOf(currentProject.getNumOfDone()));
 
         return convertView;
 

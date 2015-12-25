@@ -12,6 +12,14 @@ public class Project {
 
     private int numOfDone;
 
+    public Project() {
+
+    }
+    public Project(String name, int numOfDone) {
+        this.name = name;
+        this.numOfDone = numOfDone;
+    }
+
     public String getName() {
         return name;
     }

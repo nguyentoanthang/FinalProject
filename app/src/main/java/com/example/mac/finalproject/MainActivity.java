@@ -56,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
     private View headerView;
     private final String TAG = "TAG";
     private ProjectFragment projectFragment;
-    private HeaderFragment headerFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +101,6 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                     startActivityForResult(intent, REQUEST_LOGIN);
                 } else if (item.getItemId() == R.id.project) {
-                    projectFragment = new ProjectFragment();
                     FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
                     fragmentTransaction.replace(R.id.frame, projectFragment);
                     fragmentTransaction.addToBackStack(null);
@@ -171,7 +169,19 @@ public class MainActivity extends AppCompatActivity {
                 project.setName(projectName.getText().toString());
                 project.setNumOfDone(0);
 
-                listProject.add(project);
+                ArrayList<Project> list = new ArrayList<>();
+                list.add(project);
+                DataPasser dataPasser = new DataPasser();
+                dataPasser.setListProject(list);
+
+                Bundle bd = new Bundle();
+                bd.putSerializable("project", dataPasser);
+
+                //projectFragment.setArguments(bd);
+                FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                fragmentTransaction.detach(projectFragment);
+                fragmentTransaction.attach(projectFragment);
+                fragmentTransaction.commit();
 
 
             }

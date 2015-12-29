@@ -3,6 +3,7 @@ package com.example.mac.finalproject;
 import android.app.AlertDialog;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,29 +24,37 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.parse.FindCallback;
 import com.parse.GetDataCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseObject;
+import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ProjectFragment.OnNewItemClickListener{
 
     private ParseUser currentUser;
     private ArrayList<Project> listProject = new ArrayList<>();
     private ProjectAdapter adapter = null;
     ListView lvProject = null;
     @Bind(R.id.toolbar) Toolbar toolbar;
+    @Bind(R.id.home1) ImageButton homeBtn;
+    @Bind(R.id.title) TextView title;
+    @Bind(R.id.add) ImageButton addBtn;
     @Bind(R.id.drawer_layout) DrawerLayout drawerLayout;
     @Bind(R.id.navigation_view) NavigationView navigationView;
     private static final int REQUEST_LOGIN = 0;
@@ -56,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     private View headerView;
     private final String TAG = "TAG";
     private ProjectFragment projectFragment;
+    private ProfileFragment profileFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,12 +85,31 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // get current user
         currentUser = ParseUser.getCurrentUser();
 
+        // Setup toolbar
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
-        actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setDisplayHomeAsUpEnabled(false);
+        actionBar.setDisplayShowTitleEnabled(false);
+        actionBar.setDisplayShowCustomEnabled(true);
+
+        title.setText("Project");
+
+        addBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showInputDialog();
+            }
+        });
+
+        homeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
 
         Menu menu = navigationView.getMenu();
         MenuItem item = menu.findItem(R.id.project);
@@ -89,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 drawerLayout.closeDrawers();
-                showInputDialog();
+
             }
         });
 
@@ -103,13 +132,12 @@ public class MainActivity extends AppCompatActivity {
                 } else if (item.getItemId() == R.id.project) {
                     FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
                     fragmentTransaction.replace(R.id.frame, projectFragment);
-                    fragmentTransaction.addToBackStack(null);
+                    if (projectFragment.isHide() == true) {
+                        fragmentTransaction.addToBackStack(null);
+                    }
                     fragmentTransaction.commit();
-                } else if (item.getItemId() == R.id.navigation_item_profile){
-                    Bundle bd = new Bundle();
-                    bd.putString("txt", "This is data from mainActivity");
-                    ProfileFragment profileFragment= new ProfileFragment();
-                    profileFragment.setArguments(bd);
+                } else if (item.getItemId() == R.id.navigation_item_profile) {
+
                     FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
                     fragmentTransaction.replace(R.id.frame, profileFragment);
                     fragmentTransaction.addToBackStack(null);
@@ -119,19 +147,24 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        registerReceiver(new NetworkStateChange(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-
+        //registerReceiver(new NetworkStateChange(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
         projectFragment = new ProjectFragment();
-        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.frame, projectFragment);
-        fragmentTransaction.commit();
+        profileFragment = new ProfileFragment();
+
 
         if (currentUser != null) {
-            //new PullingData().execute();
+            new PullingData().execute();
+            new GetProject().execute();
         } else {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivityForResult(intent, REQUEST_LOGIN);
         }
+    }
+
+
+    // Project fragment item select
+    public void OnItemPick(int position) {
+        Toast.makeText(MainActivity.this, String.valueOf(position), Toast.LENGTH_SHORT).show();
     }
 
     private void showInputDialog() {
@@ -153,8 +186,6 @@ public class MainActivity extends AppCompatActivity {
             projectName = (EditText) dialogView.findViewById(R.id.input_projectname);
         }
 
-
-
         alertDialog.setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -162,26 +193,28 @@ public class MainActivity extends AppCompatActivity {
                 newProject.put("Name", projectName.getText().toString());
 
                 newProject.put("User", currentUser);
+                newProject.put("DoneWork", 0);
+                CheckInternet check = new CheckInternet(MainActivity.this);
+                if (check.isOnline()) {
+                    newProject.saveInBackground();
+                } else {
+                    newProject.saveEventually();
+                }
 
-                newProject.saveInBackground();
 
                 Project project = new Project();
                 project.setName(projectName.getText().toString());
                 project.setNumOfDone(0);
-
-                ArrayList<Project> list = new ArrayList<>();
-                list.add(project);
-                DataPasser dataPasser = new DataPasser();
-                dataPasser.setListProject(list);
-
-                Bundle bd = new Bundle();
-                bd.putSerializable("project", dataPasser);
-
-                //projectFragment.setArguments(bd);
-                FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-                fragmentTransaction.detach(projectFragment);
-                fragmentTransaction.attach(projectFragment);
-                fragmentTransaction.commit();
+                if (projectFragment.isHide() == false) {
+                    projectFragment.updateData(project);
+                    projectFragment.refreshData();
+                } else {
+                    projectFragment.updateData(project);
+                    FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                    ft.replace(R.id.frame, projectFragment);
+                    ft.addToBackStack(null);
+                    ft.commit();
+                }
 
 
             }
@@ -199,9 +232,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        //getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -211,7 +245,8 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 currentUser = ParseUser.getCurrentUser();
                 if (currentUser != null) {
-                    //new PullingData().execute();
+                    new PullingData().execute();
+                    new GetProject().execute();
                 }
             }
         } else if (requestCode == REQUEST_IMAGE_CAPTURE){
@@ -260,7 +295,6 @@ public class MainActivity extends AppCompatActivity {
 
         switch (id) {
             case android.R.id.home:
-                drawerLayout.openDrawer(GravityCompat.START);
                 return true;
             case R.id.action_settings:
                 return true;
@@ -399,7 +433,65 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private class GetProject extends AsyncTask<Void, Void, Void> {
+
+        ArrayList<Project> list = new ArrayList<>();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(Void avoid) {
+            super.onPostExecute(avoid);
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            CheckInternet check = new CheckInternet(MainActivity.this);
+
+            if (check.isOnline()) {
+                ParseQuery<ParseObject> project = ParseQuery.getQuery("Project");
+                project.whereEqualTo("User", currentUser);
+                project.findInBackground(new FindCallback<ParseObject>() {
+                    @Override
+                    public void done(List<ParseObject> objects, ParseException e) {
+                        if (e == null) {
+                            int n = objects.size();
+
+                            for (int i = 0; i < n; i ++) {
+                                Project pj = new Project();
+                                pj.setName(objects.get(i).getString("Name"));
+                                pj.setNumOfDone(objects.get(i).getNumber("DoneWork").intValue());
+                                list.add(pj);
+                            }
+                            publishProgress(null);
+                        } else {
+
+                        }
+                    }
+                });
+            } else {
+                onErrorInternet();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            Toast.makeText(MainActivity.this, String.valueOf(list.size()), Toast.LENGTH_SHORT).show();
+            projectFragment.setList(list);
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.replace(R.id.frame, projectFragment);
+            ft.commit();
+        }
+    }
+
     public void onErrorInternet() {
         Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
     }
 }
+

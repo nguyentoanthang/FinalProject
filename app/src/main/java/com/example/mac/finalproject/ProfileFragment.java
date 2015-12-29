@@ -22,8 +22,8 @@ public class ProfileFragment extends Fragment {
         View v = inflater.inflate(R.layout.profile_fragment, container, false);
         ButterKnife.bind(this, v);
 
-        String str = this.getArguments().getString("txt");
-        tv.setText(str);
+        //String str = this.getArguments().getString("txt");
+        tv.setText("This is profile");
 
         return v;
     }

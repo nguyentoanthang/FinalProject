@@ -4,9 +4,6 @@ import android.app.Application;
 
 import com.parse.Parse;
 
-/**
- * Created by mac on 12/10/15.
- */
 public class FinalProject extends Application{
 
     @Override

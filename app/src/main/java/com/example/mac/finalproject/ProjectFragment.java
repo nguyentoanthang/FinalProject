@@ -1,13 +1,15 @@
 package com.example.mac.finalproject;
 
+import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.ListFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -15,18 +17,22 @@ import java.util.ArrayList;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class ProjectFragment extends Fragment {
+public class ProjectFragment extends Fragment implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener{
 
     @Bind(R.id.listProject) ListView lvProject;
-    ArrayList<Project> listProject = null;
-    ProjectAdapter myAdapter = null;
+    private ArrayList<Project> listProject = null;
+    private ProjectAdapter myAdapter = null;
     private final String TAG = "myTAG";
+    private boolean hide;
 
+    public void setList(ArrayList<Project> list) {
+        this.listProject = list;
+        Log.d(TAG, "onSetList");
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        listProject = new ArrayList<>();
         Log.d(TAG, "onCreate");
     }
 
@@ -36,16 +42,10 @@ public class ProjectFragment extends Fragment {
         View v = inflater.inflate(R.layout.project_fragment, container, false);
         Log.d(TAG, "onCreateView");
         ButterKnife.bind(this, v);
-
-        //DataPasser dataPasser = (DataPasser) this.getArguments().getSerializable("project");
-        //ArrayList<Project> list = dataPasser.getListProject();
-        listProject.add(new Project("HelloWorld", 2));
-        listProject.add(new Project("Blink", 12));
-        //for (int i = 0; i < list.size(); i++) {
-          //  listProject.add(list.get(i));
-        //}
         myAdapter = new ProjectAdapter(getActivity(), R.layout.project_layout, listProject);
         lvProject.setAdapter(myAdapter);
+        lvProject.setOnItemClickListener(this);
+        lvProject.setOnItemLongClickListener(this);
         return v;
     }
 
@@ -64,6 +64,7 @@ public class ProjectFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        hide = true;
         Log.d(TAG, "onDestroyView");
     }
 
@@ -71,6 +72,7 @@ public class ProjectFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        hide = false;
         Log.d(TAG, "onResume");
     }
 
@@ -84,5 +86,45 @@ public class ProjectFragment extends Fragment {
     public void onStop() {
         super.onStop();
         Log.d(TAG, "onStop");
+    }
+
+    public boolean isHide() {
+        return hide;
+    }
+
+    public void refreshData() {
+        myAdapter.notifyDataSetChanged();
+    }
+
+    public void updateData(Project newProject) {
+        listProject.add(newProject);
+    }
+
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        try{
+            ((OnNewItemLongClickListener) getActivity()).OnItemLongClick(position);
+        } catch (ClassCastException e) {
+
+        }
+        return true;
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        try {
+            ((OnNewItemClickListener) getActivity()).OnItemPick(position);
+        } catch (ClassCastException e) {
+
+        }
+    }
+
+    public interface OnNewItemClickListener {
+        public void OnItemPick(int Position);
+    }
+
+    public interface OnNewItemLongClickListener {
+        public void OnItemLongClick(int position);
     }
 }

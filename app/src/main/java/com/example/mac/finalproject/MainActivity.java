@@ -37,6 +37,8 @@ import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.parse.SaveCallback;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,12 +47,15 @@ import java.util.List;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity implements ProjectFragment.OnNewItemClickListener{
+public class MainActivity extends AppCompatActivity implements ProjectFragment.OnNewItemClickListener,
+                                                               ProjectFragment.OnNewItemLongClickListener,
+                                                               WorkFragment.OnNewItemClickListener,
+                                                               WorkFragment.OnNewItemLongClick{
 
     private ParseUser currentUser;
     private ArrayList<Project> listProject = new ArrayList<>();
-    private ProjectAdapter adapter = null;
-    ListView lvProject = null;
+    private ArrayList<ParseObject> listParseProject = new ArrayList<>();
+
     @Bind(R.id.toolbar) Toolbar toolbar;
     @Bind(R.id.home1) ImageButton homeBtn;
     @Bind(R.id.title) TextView title;
@@ -66,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
     private final String TAG = "TAG";
     private ProjectFragment projectFragment;
     private ProfileFragment profileFragment;
+    private WorkFragment workFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,16 +117,6 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
             }
         });
 
-        Menu menu = navigationView.getMenu();
-        MenuItem item = menu.findItem(R.id.project);
-        View actionView = item.getActionView();
-        actionView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                drawerLayout.closeDrawers();
-
-            }
-        });
 
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -150,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
         //registerReceiver(new NetworkStateChange(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
         projectFragment = new ProjectFragment();
         profileFragment = new ProfileFragment();
+        workFragment = new WorkFragment();
 
 
         if (currentUser != null) {
@@ -164,6 +161,8 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
 
     // Project fragment item select
     public void OnItemPick(int position) {
+        new GetWork().execute(position);
+
         Toast.makeText(MainActivity.this, String.valueOf(position), Toast.LENGTH_SHORT).show();
     }
 
@@ -201,7 +200,6 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
                     newProject.saveEventually();
                 }
 
-
                 Project project = new Project();
                 project.setName(projectName.getText().toString());
                 project.setNumOfDone(0);
@@ -215,7 +213,62 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
                     ft.addToBackStack(null);
                     ft.commit();
                 }
+            }
+        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
 
+        AlertDialog alert = alertDialog.create();
+        alert.show();
+    }
+
+    private void showInputDialog(final int index) {
+        LayoutInflater layoutInflater = LayoutInflater.from(MainActivity.this);
+        View dialogView = layoutInflater.inflate(R.layout.input_dialog, null);
+        final int currentVersion = Build.VERSION.SDK_INT;
+        final AlertDialog.Builder alertDialog;
+        final EditText projectName;
+        if (currentVersion >= 20) {
+            alertDialog = new AlertDialog.Builder(MainActivity.this, R.style.AppCompatAlertDialogStyle);
+            alertDialog.setView(dialogView);
+            alertDialog.setTitle("Enter project name");
+            projectName = (EditText) dialogView.findViewById(R.id.input_projectname);
+            projectName.setTextColor(getResources().getColor(R.color.white));
+        } else {
+            alertDialog = new AlertDialog.Builder(MainActivity.this);
+            alertDialog.setView(dialogView);
+            alertDialog.setTitle("Enter project name");
+            projectName = (EditText) dialogView.findViewById(R.id.input_projectname);
+        }
+
+        alertDialog.setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ParseObject newWork = new ParseObject("Work");
+                newWork.put("Name", projectName.getText().toString());
+
+                newWork.put("Project", listParseProject.get(index));
+                newWork.put("Member", 0);
+                CheckInternet check = new CheckInternet(MainActivity.this);
+                if (check.isOnline()) {
+                    newWork.saveInBackground(new SaveCallback() {
+                        @Override
+                        public void done(ParseException e) {
+                            if (e == null) {
+                                if (workFragment.isHide()) {
+                                    new GetWork().execute(index);
+                                } else {
+
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    newWork.saveEventually();
+                }
 
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -460,14 +513,16 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
                     public void done(List<ParseObject> objects, ParseException e) {
                         if (e == null) {
                             int n = objects.size();
-
+                            ParseObject current;
                             for (int i = 0; i < n; i ++) {
+                                current = objects.get(i);
                                 Project pj = new Project();
-                                pj.setName(objects.get(i).getString("Name"));
-                                pj.setNumOfDone(objects.get(i).getNumber("DoneWork").intValue());
+                                pj.setName(current.getString("Name"));
+                                pj.setNumOfDone(current.getNumber("DoneWork").intValue());
                                 list.add(pj);
+                                listParseProject.add(current);
                             }
-                            publishProgress(null);
+                            publishProgress();
                         } else {
 
                         }
@@ -482,7 +537,7 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
         @Override
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
-            Toast.makeText(MainActivity.this, String.valueOf(list.size()), Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MainActivity.this, String.valueOf(list.size()), Toast.LENGTH_SHORT).show();
             projectFragment.setList(list);
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.replace(R.id.frame, projectFragment);
@@ -492,6 +547,132 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
 
     public void onErrorInternet() {
         Toast.makeText(getApplicationContext(), "No internet connection", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void OnItemLongClick(int position) {
+        showChoiceDialog(position);
+    }
+
+    public void showChoiceDialog(final int index) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Project");
+        builder.setItems(R.array.projectChoice, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        break;
+                    case 1: {
+                        showInputDialog(index);
+                        break;
+                    }
+                }
+                Toast.makeText(MainActivity.this, String.valueOf(which), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private class GetWork extends AsyncTask<Integer, Void, Void> {
+        ArrayList<Work> list = new ArrayList<>();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            workFragment.setList(list);
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
+            ft.replace(R.id.frame, workFragment);
+            ft.addToBackStack(null);
+            ft.commit();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected Void doInBackground(Integer... params) {
+
+            int index = params[0];
+
+            CheckInternet check = new CheckInternet(MainActivity.this);
+            if (check.isOnline()) {
+                ParseQuery<ParseObject> work = ParseQuery.getQuery("Work");
+                work.whereEqualTo("Project", listParseProject.get(index));
+                work.findInBackground(new FindCallback<ParseObject>() {
+                    @Override
+                    public void done(List<ParseObject> objects, ParseException e) {
+                        if (e == null) {
+                            int n = objects.size();
+                            ParseObject object;
+                            for (int i = 0; i < n; i++) {
+                                object = objects.get(i);
+                                Work work = new Work();
+                                work.setName(object.getString("Name"));
+                                list.add(work);
+                            }
+                            publishProgress();
+                        } else {
+
+                        }
+                    }
+                });
+
+            } else {
+                onErrorInternet();
+
+            }
+
+            return null;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+    }
+
+    @Override
+    public void OnItemCick(int Position) {
+
+    }
+
+    @Override
+    public void OnNewItemLongClick(int position) {
+        showChoiceDialogForWork(position);
+    }
+
+    public void showChoiceDialogForWork(final int index) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Work");
+        builder.setItems(R.array.workChoice, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0:
+                        break;
+                    case 1: {
+                        break;
+                    }
+                }
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
     }
 }
 

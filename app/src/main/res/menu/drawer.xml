@@ -20,8 +20,7 @@
         <menu>
             <item
                 android:title="New Project"
-                android:id="@+id/project"
-                app:actionLayout="@layout/project_row"/>
+                android:id="@+id/project"/>
             <item
                 android:icon="@drawable/ic_emoticon"
                 android:title="@string/nav_sub_menu_item01" />

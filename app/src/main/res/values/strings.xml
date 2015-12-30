@@ -12,4 +12,15 @@
     <string name="nav_sub_menu">PROJECT</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
+
+    <array name="projectChoice">
+        <item name="Delete">Delete</item>
+        <item name="Add">Add work</item>
+        <item name="Stop">Turn off notification</item>
+    </array>
+
+    <array name="workChoice">
+        <item name="Add">Add member</item>
+        <item name="Delete">Delete</item>
+    </array>
 </resources>

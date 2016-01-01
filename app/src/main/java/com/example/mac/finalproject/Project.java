@@ -1,8 +1,12 @@
 package com.example.mac.finalproject;
 
+import com.parse.ParseUser;
+
 import java.util.Date;
 
 public class Project {
+
+    private ParseUser host;
 
     private String name;
 

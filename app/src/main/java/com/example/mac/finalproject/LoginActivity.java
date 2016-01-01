@@ -1,32 +1,19 @@
 package com.example.mac.finalproject;
 
 import android.app.ProgressDialog;
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-
 import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.parse.LogInCallback;
-import com.parse.Parse;
 import com.parse.ParseException;
-import com.parse.ParseObject;
 import com.parse.ParseUser;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import butterknife.ButterKnife;
 import butterknife.Bind;
 
@@ -169,7 +156,7 @@ public class LoginActivity extends AppCompatActivity {
             ParseUser.logInInBackground(email, pass, new LogInCallback() {
                 @Override
                 public void done(ParseUser user, ParseException e) {
-                    if (user != null) {
+                    if (e == null) {
                         onLoginSuccess();
                     } else {
                         Toast.makeText(LoginActivity.this, "This email and password isn't correct", Toast.LENGTH_SHORT).show();

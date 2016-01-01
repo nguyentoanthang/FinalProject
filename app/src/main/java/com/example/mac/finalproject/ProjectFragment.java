@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.parse.ParseObject;
+
 import java.util.ArrayList;
 
 import butterknife.Bind;
@@ -18,12 +20,12 @@ import butterknife.ButterKnife;
 public class ProjectFragment extends Fragment implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener{
 
     @Bind(R.id.listProject) ListView lvProject;
-    private ArrayList<Project> listProject = null;
+    private ArrayList<ParseObject> listProject = null;
     private ProjectAdapter myAdapter = null;
     private final String TAG = "myTAG";
     private boolean hide;
 
-    public void setList(ArrayList<Project> list) {
+    public void setList(ArrayList<ParseObject> list) {
         this.listProject = list;
         Log.d(TAG, "onSetList");
     }
@@ -94,7 +96,7 @@ public class ProjectFragment extends Fragment implements AdapterView.OnItemClick
         myAdapter.notifyDataSetChanged();
     }
 
-    public void updateData(Project newProject) {
+    public void updateData(ParseObject newProject) {
         listProject.add(newProject);
     }
 

@@ -1,9 +1,6 @@
 package com.example.mac.finalproject;
 
 import android.app.AlertDialog;
-import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -26,10 +23,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.parse.FindCallback;
 import com.parse.GetDataCallback;
 import com.parse.ParseException;
@@ -38,12 +33,10 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
@@ -53,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
                                                                WorkFragment.OnNewItemLongClick{
 
     private ParseUser currentUser;
-    private ArrayList<Project> listProject = new ArrayList<>();
     private ArrayList<ParseObject> listParseProject = new ArrayList<>();
 
     @Bind(R.id.toolbar) Toolbar toolbar;
@@ -193,21 +185,20 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
 
                 newProject.put("User", currentUser);
                 newProject.put("DoneWork", 0);
+
                 CheckInternet check = new CheckInternet(MainActivity.this);
+
                 if (check.isOnline()) {
                     newProject.saveInBackground();
                 } else {
                     newProject.saveEventually();
                 }
 
-                Project project = new Project();
-                project.setName(projectName.getText().toString());
-                project.setNumOfDone(0);
                 if (projectFragment.isHide() == false) {
-                    projectFragment.updateData(project);
+                    projectFragment.updateData(newProject);
                     projectFragment.refreshData();
                 } else {
-                    projectFragment.updateData(project);
+                    projectFragment.updateData(newProject);
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     ft.replace(R.id.frame, projectFragment);
                     ft.addToBackStack(null);
@@ -465,19 +456,24 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
                 _name = currentUser.getString("Name");
                 _email = currentUser.getEmail();
                 ParseFile fileImage = (ParseFile) currentUser.get("avatar");
-                fileImage.getDataInBackground(new GetDataCallback() {
-                    @Override
-                    public void done(byte[] data, ParseException e) {
-                        if (e == null) {
-                            _bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                            image = true;
-                            publishProgress();
-                        } else {
-                            image = false;
-                            publishProgress();
+                if (fileImage != null) {
+                    fileImage.getDataInBackground(new GetDataCallback() {
+                        @Override
+                        public void done(byte[] data, ParseException e) {
+                            if (e == null) {
+                                _bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                                image = true;
+                                publishProgress();
+                            } else {
+                                image = false;
+                                publishProgress();
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    image = false;
+                    publishProgress();
+                }
             } else {
                 onErrorInternet();
             }
@@ -516,10 +512,6 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
                             ParseObject current;
                             for (int i = 0; i < n; i ++) {
                                 current = objects.get(i);
-                                Project pj = new Project();
-                                pj.setName(current.getString("Name"));
-                                pj.setNumOfDone(current.getNumber("DoneWork").intValue());
-                                list.add(pj);
                                 listParseProject.add(current);
                             }
                             publishProgress();
@@ -538,7 +530,7 @@ public class MainActivity extends AppCompatActivity implements ProjectFragment.O
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
             //Toast.makeText(MainActivity.this, String.valueOf(list.size()), Toast.LENGTH_SHORT).show();
-            projectFragment.setList(list);
+            projectFragment.setList(listParseProject);
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.replace(R.id.frame, projectFragment);
             ft.commit();

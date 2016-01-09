@@ -3,23 +3,24 @@ package com.example.mac.finalproject;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ListView;
 
 import java.util.ArrayList;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class WorkFragment extends Fragment implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener{
-
-    @Bind(R.id.listWork) ListView lvWork;
+public class WorkFragment extends Fragment {
+    @Bind(R.id.cardWork)
+    RecyclerView rvWork;
     private ArrayList<Work> listWork = null;
     private WorkAdapter myAdapter;
-    private boolean hide;
+    private boolean hide = true;
 
     public void setList(ArrayList<Work> list) {
         this.listWork = list;
@@ -45,10 +46,13 @@ public class WorkFragment extends Fragment implements AdapterView.OnItemClickLis
         View v = inflater.inflate(R.layout.work_fragment, container, false);
 
         ButterKnife.bind(this, v);
-        myAdapter = new WorkAdapter(getActivity(), R.layout.work_layout, listWork);
-        lvWork.setAdapter(myAdapter);
-        lvWork.setOnItemClickListener(this);
-        lvWork.setOnItemLongClickListener(this);
+        rvWork.setHasFixedSize(true);
+        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
+        llm.setOrientation(LinearLayoutManager.VERTICAL);
+        rvWork.setLayoutManager(llm);
+
+        myAdapter = new WorkAdapter(listWork, (WorkAdapterCommunication) getActivity());
+        rvWork.setAdapter(myAdapter);
         return v;
     }
 
@@ -66,33 +70,5 @@ public class WorkFragment extends Fragment implements AdapterView.OnItemClickLis
     public void onResume() {
         super.onResume();
         hide = false;
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        try {
-            ((OnNewItemClickListener) getActivity()).OnItemCick(position);
-        } catch (ClassCastException e) {
-
-        }
-    }
-
-    public interface OnNewItemClickListener {
-        public void OnItemCick(int Position);
-    }
-
-    @Override
-    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        try {
-            ((OnNewItemLongClick) getActivity()).OnNewItemLongClick(position);
-        } catch (ClassCastException e) {
-
-        }
-
-        return true;
-    }
-
-    public interface OnNewItemLongClick {
-        public void OnNewItemLongClick(int position);
     }
 }

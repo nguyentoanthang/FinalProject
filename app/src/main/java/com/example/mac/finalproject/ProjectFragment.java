@@ -3,29 +3,34 @@ package com.example.mac.finalproject;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.parse.ParseObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class ProjectFragment extends Fragment implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener{
+public class ProjectFragment extends Fragment {
 
-    @Bind(R.id.listProject) ListView lvProject;
-    private ArrayList<ParseObject> listProject = null;
-    private ProjectAdapter myAdapter = null;
+    @Bind(R.id.cardProject)
+    RecyclerView rvProject;
+    private ArrayList<Project> listProject = null;
+    private ProjectAdapters myAdapter = null;
     private final String TAG = "myTAG";
     private boolean hide;
 
-    public void setList(ArrayList<ParseObject> list) {
+    public void setList(ArrayList<Project> list) {
         this.listProject = list;
         Log.d(TAG, "onSetList");
     }
@@ -42,10 +47,12 @@ public class ProjectFragment extends Fragment implements AdapterView.OnItemClick
         View v = inflater.inflate(R.layout.project_fragment, container, false);
         Log.d(TAG, "onCreateView");
         ButterKnife.bind(this, v);
-        myAdapter = new ProjectAdapter(getActivity(), R.layout.project_layout, listProject);
-        lvProject.setAdapter(myAdapter);
-        lvProject.setOnItemClickListener(this);
-        lvProject.setOnItemLongClickListener(this);
+        rvProject.setHasFixedSize(true);
+        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
+        llm.setOrientation(LinearLayoutManager.VERTICAL);
+        rvProject.setLayoutManager(llm);
+        myAdapter = new ProjectAdapters(listProject, (AdapterCommunication)getActivity());
+        rvProject.setAdapter(myAdapter);
         return v;
     }
 
@@ -96,35 +103,11 @@ public class ProjectFragment extends Fragment implements AdapterView.OnItemClick
         myAdapter.notifyDataSetChanged();
     }
 
-    public void updateData(ParseObject newProject) {
+    public void updateData(Project newProject) {
         listProject.add(newProject);
     }
 
-
-    @Override
-    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        try{
-            ((OnNewItemLongClickListener) getActivity()).OnItemLongClick(position);
-        } catch (ClassCastException e) {
-
-        }
-        return true;
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        try {
-            ((OnNewItemClickListener) getActivity()).OnItemPick(position);
-        } catch (ClassCastException e) {
-
-        }
-    }
-
-    public interface OnNewItemClickListener {
-        public void OnItemPick(int Position);
-    }
-
-    public interface OnNewItemLongClickListener {
-        public void OnItemLongClick(int position);
+    public void removeItemAtIndex(int index) {
+        listProject.remove(index);
     }
 }

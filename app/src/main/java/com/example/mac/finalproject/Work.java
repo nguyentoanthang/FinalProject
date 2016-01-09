@@ -4,6 +4,8 @@ import java.util.Date;
 
 public class Work {
 
+    private String id;
+
     private String name;
 
     private int numberOfMember;
@@ -24,5 +26,13 @@ public class Work {
 
     public void setNumberOfMember(int numberOfMember) {
         this.numberOfMember = numberOfMember;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

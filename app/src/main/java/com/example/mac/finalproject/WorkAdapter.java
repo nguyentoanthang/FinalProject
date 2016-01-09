@@ -1,40 +1,68 @@
 package com.example.mac.finalproject;
 
-import android.app.Activity;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 
-public class WorkAdapter extends ArrayAdapter<Work> {
+public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder> {
 
-    private Activity context = null;
-    private ArrayList<Work> listWork = null;
-    private int layoutId;
 
-    public WorkAdapter(Activity context, int layoutId, ArrayList<Work> list) {
-        super(context, layoutId, list);
-        this.context = context;
-        this.layoutId = layoutId;
-        this.listWork = list;
+    private ArrayList<Work> contactList;
+    private WorkAdapterCommunication workAdapterCommunication;
+
+    public WorkAdapter(ArrayList<Work> contactList, WorkAdapterCommunication w) {
+        this.contactList = contactList;
+        this.workAdapterCommunication = w;
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        LayoutInflater layoutInflater = context.getLayoutInflater();
+    public int getItemCount() {
+        return contactList.size();
+    }
 
-        convertView = layoutInflater.inflate(layoutId, null);
+    @Override
+    public void onBindViewHolder(WorkViewHolder projectViewHolder, int i) {
+        final Work currentWork = contactList.get(i);
 
-        final TextView name = (TextView) convertView.findViewById(R.id.nameOfWork);
 
-        final Work currentWork = listWork.get(position);
+        final int index = i;
+        // update ui
+        projectViewHolder.name.setText(currentWork.getName());
+        projectViewHolder.choice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                workAdapterCommunication.WorkCallBack(v, currentWork.getId());
+            }
+        });
+    }
 
-        name.setText(currentWork.getName());
+    @Override
+    public WorkViewHolder onCreateViewHolder(ViewGroup viewGroup, final int i) {
+        View itemView = LayoutInflater.
+                from(viewGroup.getContext()).
+                inflate(R.layout.work_layout, viewGroup, false);
+        WorkViewHolder projectViewHolder = new WorkViewHolder(itemView);
 
-        return convertView;
+        return projectViewHolder;
+    }
+
+    public static class WorkViewHolder extends RecyclerView.ViewHolder{
+
+        protected TextView name;
+        protected ImageButton choice;
+
+        public WorkViewHolder(View v) {
+            super(v);
+            name = (TextView) v.findViewById(R.id.nameWork);
+            choice = (ImageButton) v.findViewById(R.id.choice);
+
+        }
 
     }
+
 }

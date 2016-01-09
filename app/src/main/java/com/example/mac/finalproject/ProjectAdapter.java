@@ -3,6 +3,7 @@ package com.example.mac.finalproject;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,18 +46,24 @@ public class ProjectAdapter extends ArrayAdapter<ParseObject> {
 
         final ParseObject currentProject = lisProject.get(position);
 
-        //LinearLayout container = (LinearLayout) convertView.findViewById(R.id.progess);
-        //ImageView img = new ImageView(context);
-        //container.addView(img);
-
         final CircleImageView host = (CircleImageView) convertView.findViewById(R.id.host);
 
         CheckInternet check = new CheckInternet(context);
+
+        ProgressBar progressBar = (ProgressBar) convertView.findViewById(R.id.done);
+        TextView done = (TextView) convertView.findViewById(R.id.txtdone);
+        TextView sum = (TextView) convertView.findViewById(R.id.txtsum);
+
 
         if (check.isOnline()) {
             name.setText(currentProject.getString("Name"));
             ParseUser user = currentProject.getParseUser("User");
             ParseFile fileImage = (ParseFile) user.get("avatar");
+            int i = currentProject.getInt("Work");
+            int j = currentProject.getInt("DoneWork");
+            done.setText(String.valueOf(j));
+            sum.setText(String.valueOf(i));
+            progressBar.setProgress(j/i);
             if (fileImage != null) {
                 fileImage.getDataInBackground(new GetDataCallback() {
                     @Override

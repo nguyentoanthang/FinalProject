@@ -22,5 +22,6 @@
     <array name="workChoice">
         <item name="Add">Add member</item>
         <item name="Delete">Delete</item>
+        <item name="Comment">Comment</item>
     </array>
 </resources>

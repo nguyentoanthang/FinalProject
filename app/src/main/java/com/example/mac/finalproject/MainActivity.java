@@ -2,7 +2,6 @@ package com.example.mac.finalproject;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.os.SystemClock;
 import android.support.v4.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -41,6 +40,7 @@ import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IProfile;
 import com.mikepenz.crossfader.util.UIUtils;
+import com.mikepenz.materialize.holder.StringHolder;
 import com.parse.DeleteCallback;
 import com.parse.FindCallback;
 import com.parse.GetDataCallback;
@@ -86,6 +86,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
     private AccountHeader header = null;
     private MiniDrawer miniDrawer = null;
     private Crossfader crossfader = null;
+    PrimaryDrawerItem profileDrawerItem;
+    PrimaryDrawerItem projectDrawerItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
 
         user = new ProfileDrawerItem().withName("User").withEmail("User@gmail.com").withIcon(R.drawable.profile_image);
 
-        PrimaryDrawerItem profileDrawerItem = new PrimaryDrawerItem().withName("Profile").withIcon(R.drawable.ic_profile).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+        profileDrawerItem = new PrimaryDrawerItem().withName("Profile").withIcon(R.drawable.ic_profile).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
             @Override
             public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
 
@@ -127,8 +129,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
 
                 return true;
             }
-        }).withIdentifier(0).withBadge("10");
-        PrimaryDrawerItem projectDrawerItem = new PrimaryDrawerItem().withName("Project").withIcon(R.drawable.project).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+        }).withIdentifier(0);
+        projectDrawerItem = new PrimaryDrawerItem().withName("Project").withIcon(R.drawable.project).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
             @Override
             public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
                 if (projectFragment.isHide()) {
@@ -140,7 +142,15 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                 return true;
             }
         }).withIdentifier(1);
-        SecondaryDrawerItem logoutDrawer = new SecondaryDrawerItem().withName("Logout").withIcon(R.drawable.logout);
+        SecondaryDrawerItem logoutDrawer = new SecondaryDrawerItem().withName("Logout").withIcon(R.drawable.logout).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+            @Override
+            public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
+                ParseUser.logOut();
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                startActivityForResult(intent, REQUEST_LOGIN);
+                return false;
+            }
+        });
 
         buildHeader(false, savedInstanceState);
 
@@ -200,9 +210,15 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         if (currentUser != null) {
             ParseInstallation.getCurrentInstallation().put("UserEmail", currentUser.getEmail());
             ParseInstallation.getCurrentInstallation().saveInBackground();
-            PullingData();
-            GetProject();
-            getDataOfCurrentUser();
+            new GetAllOfData().execute();
+            if (currentUser.getInt("Badge") == 0) {
+                profileDrawerItem.withBadge("");
+                navigation.updateItem(profileDrawerItem);
+            } else {
+                profileDrawerItem.withBadge(String.valueOf(currentUser.getInt("Badge")));
+                navigation.updateItem(profileDrawerItem);
+            }
+
         } else {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivityForResult(intent, REQUEST_LOGIN);
@@ -361,6 +377,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
 
                 newWork.put("Project", project);
                 newWork.put("Member", 0);
+                newWork.put("isDone", false);
+
                 CheckInternet check = new CheckInternet(MainActivity.this);
                 if (check.isOnline()) {
                     newWork.saveInBackground(new SaveCallback() {
@@ -409,16 +427,22 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                 if (currentUser != null) {
                     ParseInstallation.getCurrentInstallation().put("UserEmail", currentUser.getEmail());
                     ParseInstallation.getCurrentInstallation().saveInBackground();
-                    PullingData();
-                    GetProject();
-                    getDataOfCurrentUser();
+                    new GetAllOfData().execute();
+                    if (currentUser.getInt("Badge") == 0) {
+                        profileDrawerItem.withBadge("");
+                        navigation.updateItem(profileDrawerItem);
+                    } else {
+                        profileDrawerItem.withBadge(String.valueOf(currentUser.getInt("Badge")));
+                        navigation.updateItem(profileDrawerItem);
+                    }
+
                 }
             }
         } else if (requestCode == REQUEST_IMAGE_CAPTURE){
             if (resultCode == RESULT_OK) {
                 try {
                     Bitmap bitmap = (Bitmap) data.getExtras().get("data");
-                    //profile_image.setImageBitmap(bitmap);
+
                 } catch (OutOfMemoryError e) {
                     e.printStackTrace();
                 } catch (Exception e) {
@@ -586,44 +610,63 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         CheckInternet check = new CheckInternet(MainActivity.this);
 
         if (check.isOnline()) {
-            final ParseQuery<ParseObject> project = ParseQuery.getQuery("Project");
+            ParseQuery<ParseObject> project = ParseQuery.getQuery("Project");
             project.whereEqualTo("User", currentUser);
-            project.findInBackground(new FindCallback<ParseObject>() {
-                @Override
-                public void done(List<ParseObject> objects, ParseException e) {
-                    if (e == null) {
-                        int n = objects.size();
-                        ParseObject current;
+            List<ParseObject> objects;
+            try {
+                objects = project.find();
 
-                        for (int i = 0; i < n; i ++) {
-                            current = objects.get(i);
-                            Project currentP = new Project();
-                            currentP.setName(current.getString("Name"));
-                            currentP.setNumOfDone(current.getInt("DoneWork"));
-                            currentP.setNumOfWork(current.getInt("Work"));
-                            currentP.setHost(currentUserAvatar);
-                            listProject.add(currentP);
-                            listParseProject.add(current);
-                            projectFragment.setList(listProject);
-                            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                            ft.replace(R.id.frame, projectFragment);
-                            ft.commit();
-                        }
-                    } else {
-                        projectFragment.setList(listProject);
-                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                        ft.replace(R.id.frame, projectFragment);
-                        ft.commit();
+                ParseObject current;
 
+                int n = objects.size();
+
+                for (int i = 0; i < n; i ++) {
+                    current = objects.get(i);
+                    Project currentP = new Project();
+
+                    currentP.setName(current.getString("Name"));
+                    currentP.setNumOfDone(current.getInt("DoneWork"));
+                    currentP.setNumOfWork(current.getInt("Work"));
+                    currentP.setHost(currentUserAvatar);
+
+                    listProject.add(currentP);
+                    listParseProject.add(current);
+                }
+
+                // get project of other user
+                List<String> listObId = currentUser.getList("Project");
+
+                if (listObId != null) {
+                    int m = listObId.size();
+
+                    for (int i = 0; i < m; i++) {
+                        ParseQuery<ParseObject> query = ParseQuery.getQuery("Project");
+
+                        query.whereEqualTo("objectId", listObId.get(i));
+                        current = query.find().get(0);
+
+                        Project currentP = new Project();
+
+                        currentP.setName(current.getString("Name"));
+                        currentP.setNumOfDone(current.getInt("DoneWork"));
+                        currentP.setNumOfWork(current.getInt("Work"));
+                        currentP.setHost(getAvatarOfUser(current.getParseUser("User").getObjectId()));
+                        listProject.add(currentP);
+                        listParseProject.add(current);
                     }
                 }
-            });
+
+                projectFragment.setList(listProject);
+
+
+            } catch (ParseException e) {
+                e.printStackTrace();
+                projectFragment.setList(listProject);
+            }
         } else {
             onErrorInternet();
             projectFragment.setList(listProject);
-            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-            ft.replace(R.id.frame, projectFragment);
-            ft.commit();
+
         }
 
     }
@@ -648,7 +691,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
 
                         }
                     }
-                        break;
+                    break;
                     case 1: {
                         showInputDialog(index);
                         break;
@@ -662,63 +705,106 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         dialog.show();
     }
 
+    public ArrayList<Work> getAllWorkForProject(ParseObject project) {
+
+        ArrayList<Work> listWork = new ArrayList<>();
+
+        CheckInternet check = new CheckInternet(MainActivity.this);
+        if (check.isOnline()) {
+            ParseQuery<ParseObject> workQuery = ParseQuery.getQuery("Work");
+            workQuery.whereEqualTo("Project", project);
+            List<ParseObject> objects;
+            try {
+                objects = workQuery.find();
+                int n = objects.size();
+                ParseObject object;
+                for (int i = 0; i < n; i++) {
+                    object = objects.get(i);
+                    Work work = new Work();
+                    work.setName(object.getString("Name"));
+                    work.setId(object.getObjectId());
+                    work.setDone(object.getBoolean("isDone"));
+                    work.setDeadLine(object.getDate("DeadLine"));
+                    if (object.getList("ListMember") != null) {
+                        work.setNumberOfMember(object.getList("ListMember").size());
+                        ParseObject p = object.getParseObject("Project");
+                        ParseUser u = p.getParseUser("User");
+                        if(object.getList("ListMember").contains(currentUser.getEmail())) {
+                            work.setForCurrentUser(true);
+                            work.setPermission(false);
+                        } else if (ParseUser.getCurrentUser().getObjectId() == u.getObjectId()) {
+                            work.setForCurrentUser(true);
+                            work.setPermission(true);
+                        } else {
+                            work.setForCurrentUser(false);
+                            work.setPermission(false);
+                        }
+                    } else {
+                        work.setNumberOfMember(0);
+                        ParseObject p = object.getParseObject("Project");
+                        ParseUser u = p.getParseUser("User");
+                        if (ParseUser.getCurrentUser().getObjectId() == u.getObjectId()) {
+                            work.setForCurrentUser(true);
+                            work.setPermission(true);
+                        } else {
+                            work.setForCurrentUser(false);
+                            work.setPermission(false);
+                        }
+                    }
+
+                    listWork.add(work);
+                }
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            onErrorInternet();
+        }
+
+        return listWork;
+
+    }
+
     private class GetWork extends AsyncTask<Integer, Void, Void> {
-        ArrayList<Work> list = new ArrayList<>();
+
+        ProgressDialog progressDialog;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-            super.onProgressUpdate(values);
-            workFragment.setList(list);
+            workFragment.setList(new ArrayList<Work>());
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
             ft.replace(R.id.frame, workFragment);
             ft.addToBackStack(null);
             ft.commit();
+            progressDialog = new ProgressDialog(MainActivity.this,
+                    R.style.AppTheme_Dark_Dialog);
+            progressDialog.setIndeterminate(true);
+            progressDialog.setMessage("Loading...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+            progressDialog.dismiss();
+            workFragment.refreshData();
         }
 
         @Override
         protected Void doInBackground(Integer... params) {
 
             int index = params[0];
-
-            CheckInternet check = new CheckInternet(MainActivity.this);
-            if (check.isOnline()) {
-                ParseQuery<ParseObject> work = ParseQuery.getQuery("Work");
-                work.whereEqualTo("Project", listParseProject.get(index));
-                work.findInBackground(new FindCallback<ParseObject>() {
-                    @Override
-                    public void done(List<ParseObject> objects, ParseException e) {
-                        if (e == null) {
-                            int n = objects.size();
-                            ParseObject object;
-                            for (int i = 0; i < n; i++) {
-                                object = objects.get(i);
-                                Work work = new Work();
-                                work.setName(object.getString("Name"));
-                                work.setId(object.getObjectId());
-                                list.add(work);
-                            }
-                            publishProgress();
-                        } else {
-
-                        }
-                    }
-                });
-
-            } else {
-                onErrorInternet();
-
-            }
+            workFragment.updateData(getAllWorkForProject(listParseProject.get(index)));
 
             return null;
         }
@@ -730,7 +816,21 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
     }
 
 
-    public void showChoiceDialogForWork(final String id) {
+    private void showPermissionDialog() {
+        AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+        alert.setTitle("Permission");
+        alert.setMessage("You have no permission to do that");
+        alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        AlertDialog dialogAlert = alert.create();
+        dialogAlert.show();
+    }
+
+    public void showChoiceDialogForWork(final Work w) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Work");
@@ -739,14 +839,23 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0: {
-                        showInputEmailDialog();
+                        if (w.isPermission()) {
+                            showInputEmailDialog(w.getId());
+                        } else {
+                            showPermissionDialog();
+                        }
                     }
                         break;
                     case 1: {
+                        if (w.isPermission()) {
+
+                        } else {
+                            showPermissionDialog();
+                        }
                         break;
                     }
                     case 2: {
-                        commentFragment.setData(getAllCommentForWork(id), id);
+                        commentFragment.setData(getAllCommentForWork(w.getId()), w);
                         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                         ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
                         ft.replace(R.id.frame, commentFragment);
@@ -774,9 +883,9 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
     }
 
     @Override
-    public void WorkCallBack(View v, String id) {
+    public void WorkCallBack(View v, Work w) {
         if (v.getId() == R.id.choice) {
-            showChoiceDialogForWork(id);
+            showChoiceDialogForWork(w);
         }
 
     }
@@ -821,6 +930,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         } catch (ParseException e) {
             e.printStackTrace();
         }
+
         return list;
     }
 
@@ -883,7 +993,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         }
     }
 
-    private void showInputEmailDialog() {
+    private void showInputEmailDialog(final String workId) {
         LayoutInflater layoutInflater = LayoutInflater.from(MainActivity.this);
         View dialogView = layoutInflater.inflate(R.layout.input_dialog, null);
         final int currentVersion = Build.VERSION.SDK_INT;
@@ -915,6 +1025,17 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                     e.printStackTrace();
                 }
 
+                ParseObject notify = new ParseObject("Notification");
+                notify.put("User", projectName.getText().toString());
+                notify.put("forWork", workId);
+
+                try {
+                    notify.put("Message", data.getString("alert"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                notify.saveInBackground();
                 // Send push notification to query
                 ParsePush push = new ParsePush();
                 push.setQuery(pushQuery); // Set our Installation query
@@ -930,6 +1051,67 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
 
         AlertDialog alert = alertDialog.create();
         alert.show();
+    }
+
+    public Bitmap getAvatarOfUser(String userId) {
+
+        ParseUser user;
+        ParseQuery<ParseUser> query = ParseUser.getQuery();
+        query.whereEqualTo("objectId", userId);
+
+        try {
+            user = query.find().get(0);
+            ParseFile imageFile = (ParseFile) user.get("avatar");
+            if (imageFile != null) {
+                try {
+                    byte[] data = imageFile.getData();
+                    return BitmapFactory.decodeByteArray(data, 0, data.length);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    return BitmapFactory.decodeResource(getResources(), R.drawable.profile_image);
+                }
+            } else {
+                return BitmapFactory.decodeResource(getResources(), R.drawable.profile_image);
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return BitmapFactory.decodeResource(getResources(), R.drawable.profile_image);
+    }
+
+    private class GetAllOfData extends AsyncTask<Void, Void, Void> {
+
+        ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MainActivity.this,
+                    R.style.AppTheme_Dark_Dialog);
+            progressDialog.setIndeterminate(true);
+            progressDialog.setMessage("Loading...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            PullingData();
+            GetProject();
+            getDataOfCurrentUser();
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            progressDialog.dismiss();
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.replace(R.id.frame, projectFragment);
+            ft.commit();
+        }
     }
 }
 

@@ -38,6 +38,16 @@
             android:layout_marginLeft="25dp"
             android:id="@+id/UserEmail"/>
 
+        <ImageButton
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/alert"
+            android:background="@null"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginBottom="20dp"
+            android:layout_marginRight="20dp"
+            android:id="@+id/alert"/>
 
     </RelativeLayout>
 

@@ -40,6 +40,12 @@ public class WorkFragment extends Fragment {
         listWork.add(newWork);
     }
 
+    public void updateData(ArrayList<Work> list) {
+        for (int i = 0; i < list.size(); i++) {
+            this.listWork.add(list.get(i));
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

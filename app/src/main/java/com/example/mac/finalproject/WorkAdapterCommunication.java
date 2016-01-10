@@ -7,6 +7,6 @@ import android.view.View;
  */
 public interface WorkAdapterCommunication {
 
-    public void WorkCallBack(View v, String id);
+    public void WorkCallBack(View v, Work w);
 
 }

@@ -13,10 +13,19 @@ import android.widget.ListView;
 
 import com.parse.ParseException;
 import com.parse.ParseFile;
+import com.parse.ParseInstallation;
 import com.parse.ParseObject;
+import com.parse.ParsePush;
+import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
@@ -28,11 +37,11 @@ public class CommentFragment extends Fragment {
     @Bind(R.id.listCmt) ListView lv;
     @Bind(R.id.input_cmt) EditText edt;
     @Bind(R.id.send) ImageButton send;
-    private String workId;
+    private Work w;
 
-    public void setData(ArrayList<Comment> list, String workId) {
+    public void setData(ArrayList<Comment> list, Work w) {
         this.list = list;
-        this.workId = workId;
+        this.w = w;
     }
 
     @Nullable
@@ -62,11 +71,41 @@ public class CommentFragment extends Fragment {
                 }
                 list.add(newComment);
                 ParseObject object = new ParseObject("Comment");
-                object.put("forWork", workId);
+                object.put("forWork", w.getId());
                 object.put("ofUser", ParseUser.getCurrentUser().getObjectId());
                 object.put("Comment", cmt);
                 object.saveInBackground();
                 RefreshData();
+
+                ParseQuery<ParseObject> obs = ParseQuery.getQuery("Work");
+
+                obs.whereEqualTo("objectId", w.getId());
+                try {
+
+                    ParseObject ob = obs.find().get(0);
+                    List<String> l = ob.getList("ListMember");
+                    l.remove(ParseUser.getCurrentUser().getEmail());
+
+                    Collection<String> list_member = l;
+                    ParseQuery pushQuery = ParseInstallation.getQuery();
+                    pushQuery.whereContainedIn("UserEmail", list_member);
+
+                    JSONObject data = new JSONObject();
+                    try {
+                        data.put("title", "Comment");
+                        data.put("alert", "I comment in a work");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    ParsePush push = new ParsePush();
+                    push.setData(data);
+                    push.setQuery(pushQuery);
+                    push.sendInBackground();
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
 
             }
         });

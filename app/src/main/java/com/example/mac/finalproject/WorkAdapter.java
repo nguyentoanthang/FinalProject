@@ -7,6 +7,11 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.ParseUser;
+
 import java.util.ArrayList;
 
 public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder> {
@@ -33,10 +38,13 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder
         final int index = i;
         // update ui
         projectViewHolder.name.setText(currentWork.getName());
+        if (currentWork.isForCurrentUser() == false) {
+            projectViewHolder.name.setBackgroundResource(R.color.black);
+        }
         projectViewHolder.choice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                workAdapterCommunication.WorkCallBack(v, currentWork.getId());
+                workAdapterCommunication.WorkCallBack(v, currentWork);
             }
         });
     }

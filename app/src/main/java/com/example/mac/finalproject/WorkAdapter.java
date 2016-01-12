@@ -41,6 +41,10 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder
         if (currentWork.isForCurrentUser() == false) {
             projectViewHolder.name.setBackgroundResource(R.color.black);
         }
+        if (currentWork.isDone()) {
+            projectViewHolder.name.setBackgroundResource(R.color.green);
+        }
+
         projectViewHolder.choice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

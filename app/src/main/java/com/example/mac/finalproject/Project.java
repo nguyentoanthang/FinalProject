@@ -12,6 +12,8 @@ public class Project {
 
     private String name;
 
+    private boolean permission;
+
     private int numOfMember;
 
     private int numOfWork;
@@ -58,5 +60,21 @@ public class Project {
 
     public void setNumOfWork(int numOfWork) {
         this.numOfWork = numOfWork;
+    }
+
+    public int getNumOfMember() {
+        return numOfMember;
+    }
+
+    public void setNumOfMember(int numOfMember) {
+        this.numOfMember = numOfMember;
+    }
+
+    public boolean isPermission() {
+        return permission;
+    }
+
+    public void setPermission(boolean permission) {
+        this.permission = permission;
     }
 }

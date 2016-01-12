@@ -10,7 +10,7 @@ public class FinalProject extends Application{
     public void onCreate() {
         super.onCreate();
 
-        Parse.enableLocalDatastore(this);
+        Parse.enableLocalDatastore(getApplicationContext());
         Parse.initialize(this, "jJ8QrqEcY6pcPWkpcFM72gAH8DRCQ2OL8yltmsif", "MVCSDgySMy6h71zkLFSKlLURqHgiJT4WvH3dPGbH");
     }
 }

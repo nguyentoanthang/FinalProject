@@ -77,4 +77,8 @@ public class WorkFragment extends Fragment {
         super.onResume();
         hide = false;
     }
+
+    public void removeItem(Work item) {
+        listWork.remove(item);
+    }
 }

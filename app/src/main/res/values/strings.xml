@@ -16,12 +16,22 @@
     <array name="projectChoice">
         <item name="Delete">Delete</item>
         <item name="Add">Add work</item>
-        <item name="Stop">Turn off notification</item>
+        <item name="Detail">Project</item>
     </array>
 
     <array name="workChoice">
         <item name="Add">Add member</item>
         <item name="Delete">Delete</item>
         <item name="Comment">Comment</item>
+        <item name="Detail">Work</item>
+        <item name="done">Mark as done</item>
+        <item name="notDone">Mark as not done</item>
+        <item name="Member">Member</item>
+    </array>
+
+    <array name="Contact">
+        <item name="Call">Call</item>
+        <item name="send">Send a sms message</item>
+        <item name="email">Send an email</item>
     </array>
 </resources>

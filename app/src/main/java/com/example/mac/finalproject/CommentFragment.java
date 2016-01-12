@@ -24,6 +24,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.Bind;
@@ -54,6 +55,7 @@ public class CommentFragment extends Fragment {
             public void onClick(View v) {
                 String cmt = edt.getText().toString();
                 edt.setText("");
+                Date d1 = new Date();
                 Comment newComment = new Comment();
                 newComment.setCmt(cmt);
                 newComment.setName(ParseUser.getCurrentUser().getString("Name"));
@@ -69,6 +71,8 @@ public class CommentFragment extends Fragment {
                 } else {
                     newComment.setHost(BitmapFactory.decodeResource(getResources(), R.drawable.profile_image));
                 }
+                Date d2 = new Date();
+                newComment.setTime((d2.getTime() - d1.getTime())/1000);
                 list.add(newComment);
                 ParseObject object = new ParseObject("Comment");
                 object.put("forWork", w.getId());

@@ -10,6 +10,8 @@ public class Comment {
 
     private String name;
 
+    private long time;
+
     public String getCmt() {
         return cmt;
     }
@@ -32,5 +34,13 @@ public class Comment {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
     }
 }

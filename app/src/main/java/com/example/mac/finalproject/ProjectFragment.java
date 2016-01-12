@@ -110,4 +110,8 @@ public class ProjectFragment extends Fragment {
     public void removeItemAtIndex(int index) {
         listProject.remove(index);
     }
+
+    public void removeAll() {
+
+    }
 }

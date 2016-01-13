@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                     addBtn.setVisibility(View.GONE);
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     ft.replace(R.id.frame, profileFragment);
-                    ft.addToBackStack(null);
+                    getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
                     ft.commit();
                 }
 
@@ -146,8 +146,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                     if (!profileFragment.isLoading()) {
                         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                         ft.replace(R.id.frame, projectFragment);
-                        ft.addToBackStack(null);
                         ft.commit();
+                        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
                     } else {
                         profileFragment.setLoading(false);
                         showAlertDialogForReload();
@@ -174,6 +174,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
 
         buildHeader(false, savedInstanceState);
 
+        Toast.makeText(MainActivity.this, String.valueOf(getDensity()), Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, String.valueOf(getInches()), Toast.LENGTH_LONG).show();
 
         // get size of creen to update ui
         if (getInches() > 5.5) {
@@ -221,9 +223,26 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                     .withDrawerGravity(Gravity.START)
                     .withSavedInstance(savedInstanceState)
                     .withSelectedItem(1)
+                    .withGenerateMiniDrawer(true)
                     .withAccountHeader(header)
                     .addDrawerItems(profileDrawerItem, projectDrawerItem, new DividerDrawerItem(), logoutDrawer)
+                    .buildView();
+
+            int firstWidth = (int) UIUtils.convertDpToPixel(250, this);
+            int secondWidth = (int) UIUtils.convertDpToPixel(0, this);
+
+
+            miniDrawer = navigation.getMiniDrawer();
+            crossfader = new Crossfader()
+                    .withContent(findViewById(R.id.frame))
+                    .withFirst(navigation.getSlider(), firstWidth)
+                    .withSecond(miniDrawer.build(this), secondWidth)
+                    .withSavedInstance(savedInstanceState)
                     .build();
+
+            miniDrawer.withCrossFader(new CrossfadeWrapper(crossfader));
+
+            crossfader.getCrossFadeSlidingPaneLayout().setShadowResourceLeft(R.drawable.material_drawer_shadow_left);
 
         }
         //navigation.getActionBarDrawerToggle().setDrawerIndicatorEnabled(true);
@@ -303,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         header = new AccountHeaderBuilder()
                 .withActivity(this)
                 .withCompactStyle(compact)
-                .withHeaderBackground(R.drawable.header)
+                .withHeaderBackground(R.drawable.background)
                 .addProfiles(user)
                 .withSelectionListEnabledForSingleProfile(false)
                 .withOnAccountHeaderProfileImageListener(new AccountHeader.OnAccountHeaderProfileImageListener() {
@@ -372,7 +391,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                     projectFragment.updateData(currentP);
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     ft.replace(R.id.frame, projectFragment);
-                    ft.addToBackStack(null);
+                    getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
                     ft.commit();
                 }
             }
@@ -416,7 +435,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                 newWork.put("Member", 0);
                 newWork.put("isDone", false);
                 newWork.addUnique("ListMember", currentUser.getEmail());
-                newWork.put("Notification", 0);
+                newWork.addUnique("LNo", currentUser.getEmail());
+                newWork.put("Comment", false);
                 newWork.put("DeadLine", new Date());
 
                 CheckInternet check = new CheckInternet(MainActivity.this);
@@ -436,6 +456,11 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                 } else {
                     newWork.saveEventually();
                 }
+
+                Project p = listProject.get(index);
+                int numofwork = p.getNumOfWork() + 1;
+                p.setNumOfWork(numofwork);
+                listProject.set(index, p);
 
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -518,8 +543,14 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         switch (id) {
             case android.R.id.home: {
                 if (crossfader != null) {
-                    crossfader.crossFade();
-                    profileFragment.popupWindow.dismiss();
+
+                    if (profileFragment.isHide() == false || projectFragment.isHide() == false) {
+                        crossfader.crossFade();
+                        profileFragment.popupWindow.dismiss();
+                        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
+                    } else {
+                        onBackPressed();
+                    }
                 } else {
 
                 }
@@ -765,18 +796,19 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                         break;
                     }
                     case 2: {
-                        boolean permission = ParseUser.getCurrentUser().getObjectId().equals(listParseProject.get(index).getParseUser("User").getObjectId());
+                        //boolean permission = ParseUser.getCurrentUser().getObjectId().equals(listParseProject.get(index).getParseUser("User").getObjectId());
                         projectDetail.setData(getDetailOfProject(listParseProject.get(index)), listParseProject.get(index));
                         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                         ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
                         ft.replace(R.id.frame, projectDetail);
                         ft.addToBackStack(null);
                         ft.commit();
+                        getSupportActionBar().setHomeAsUpIndicator(R.drawable.back);
                         addBtn.setVisibility(View.GONE);
                         break;
                     }
                 }
-                Toast.makeText(MainActivity.this, String.valueOf(which), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this, String.valueOf(which), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -804,6 +836,16 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                     work.setId(object.getObjectId());
                     work.setDone(object.getBoolean("isDone"));
                     work.setDeadLine(object.getDate("DeadLine"));
+
+                    List<String> l = object.getList("listNotify");
+
+                    if (l != null && l.contains(ParseUser.getCurrentUser().getEmail())) {
+                        work.setComment(true);
+                    } else {
+                        work.setComment(false);
+                    }
+
+                    work.setDescription(object.getString("Description"));
                     if (object.getList("ListMember") != null) {
                         work.setNumberOfMember(object.getList("ListMember").size());
                         ParseUser u = project.getParseUser("User");
@@ -857,6 +899,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
             ft.replace(R.id.frame, workFragment);
             ft.addToBackStack(null);
             ft.commit();
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.back);
             progressDialog = new ProgressDialog(MainActivity.this,
                     R.style.AppTheme_Dark_Dialog);
             progressDialog.setIndeterminate(true);
@@ -891,8 +934,18 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        if (profileFragment.isHide() == false) {
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
+            addBtn.setVisibility(View.GONE);
+        }
+
         if (projectFragment.isHide() == false) {
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
             addBtn.setVisibility(View.VISIBLE);
+        }
+        if (workFragment.isHide() == false) {
+            workFragment.getComment();
+            workFragment.refreshData();
         }
     }
 
@@ -915,120 +968,328 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
 
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Work");
-        builder.setItems(R.array.workChoice, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
-                    case 0: {
-                        if (w.isPermission()) {
-                            showInputEmailDialog(w.getId());
-                        } else {
-                            showAlertDialog("Permission", "You have noo permission to do that");
-                        }
-                    }
-                    break;
-                    case 1: {
-                        if (w.isPermission()) {
-
-                            new DeleteAllDataForWork(w).execute();
-                        } else {
-                            showAlertDialog("Permission", "You have noo permission to do that");
-                        }
-                        break;
-                    }
-                    case 2: {
-                        commentFragment.setData(getAllCommentForWork(w.getId()), w);
-                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                        ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
-                        ft.replace(R.id.frame, commentFragment);
-                        ft.addToBackStack(null);
-                        ft.commit();
-                        break;
-                    }
-                    case 3: {
-                        workDetail.setData(getDetailOfWork(w.getId()));
-                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                        ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
-                        ft.replace(R.id.frame, workDetail);
-                        ft.addToBackStack(null);
-                        ft.commit();
-                        addBtn.setVisibility(View.GONE);
-                        break;
-                    }
-                    case 4: {
-                        ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
-                        query.whereEqualTo("objectId", w.getId());
-                        ParseObject object = null;
-                        try {
-                            object = query.find().get(0);
-                            if (object.getBoolean("isDone") == true) {
-                                showAlertDialog(w.getName(), "It is done, you can mark it as not done");
+        if (ParseUser.getCurrentUser().getBoolean("Notification") == true) {
+            builder.setItems(R.array.workChoice, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which) {
+                        case 0: {
+                            if (w.isPermission()) {
+                                showInputEmailDialog(w.getId());
                             } else {
-                                ParseQuery<ParseObject> obs = ParseQuery.getQuery("Work");
+                                showAlertDialog("Permission", "You have no permission to do that");
+                            }
+                        }
+                        break;
+                        case 1: {
+                            if (w.isPermission()) {
 
-                                obs.whereEqualTo("objectId", w.getId());
+                                new DeleteAllDataForWork(w).execute();
+                            } else {
+                                showAlertDialog("Permission", "You have noo permission to do that");
+                            }
+                            break;
+                        }
+                        case 2: {
+                            new LoadingComment(w).execute();
+                            break;
+                        }
+                        case 3: {
+                            new GetDetailOFWork(w).execute();
+                            break;
+                        }
+                        case 4: {
+                            if (w.isForCurrentUser()) {
+                                ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
+                                query.whereEqualTo("objectId", w.getId());
+                                ParseObject object = null;
                                 try {
+                                    object = query.find().get(0);
 
-                                    ParseObject ob = obs.find().get(0);
-                                    List<String> l = ob.getList("ListMember");
-                                    l.remove(ParseUser.getCurrentUser().getEmail());
+                                    if (object.getParseObject("Project").getParseUser("User").getObjectId().equals(ParseUser.getCurrentUser().getObjectId())) {
+                                        if (object.getBoolean("isDone") == true) {
+                                            showAlertDialog(w.getName(), "It is done!");
+                                        } else {
+                                            List<String> l = object.getList("ListMember");
+                                            l.remove(ParseUser.getCurrentUser().getEmail());
 
-                                    Collection<String> list_member = l;
-                                    ParseQuery pushQuery = ParseInstallation.getQuery();
-                                    pushQuery.whereContainedIn("UserEmail", list_member);
+                                            Collection<String> list_member = l;
+                                            ParseQuery pushQuery = ParseInstallation.getQuery();
+                                            pushQuery.whereContainedIn("UserEmail", list_member);
+                                            JSONObject data = new JSONObject();
+                                            try {
+                                                data.put("title", "One task is done");
+                                                data.put("alert", "The admin" +
+                                                        " mark the task " + w.getName() + " as done.");
+                                                data.put("sender", ParseUser.getCurrentUser().getObjectId());
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
 
-                                    JSONObject data = new JSONObject();
-                                    try {
-                                        data.put("title", "One task is done");
-                                        data.put("alert", ParseUser.getCurrentUser().getEmail() +
-                                                " mark the task " + w.getName() + " as done.");
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
+                                            ParseObject notify = new ParseObject("Notification");
+                                            notify.put("Title", "Done");
+                                            notify.put("forWork", w.getId());
+                                            notify.addAllUnique("User", list_member);
+
+                                            try {
+                                                notify.put("Message", data.getString("alert"));
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+                                            notify.saveInBackground();
+                                            ParsePush push = new ParsePush();
+                                            push.setData(data);
+                                            push.setQuery(pushQuery);
+                                            push.sendInBackground();
+                                            object.put("isDone", true);
+                                            object.saveInBackground();
+                                        }
+                                    } else {
+                                        if (object.getBoolean("isDone") == true) {
+                                            showAlertDialog(w.getName(), "It is done!");
+                                        } else {
+
+                                            List<String> l = object.getList("ListMember");
+                                            l.remove(ParseUser.getCurrentUser().getEmail());
+
+                                            Collection<String> list_member = l;
+                                            ParseQuery pushQuery = ParseInstallation.getQuery();
+                                            pushQuery.whereContainedIn("UserEmail", list_member);
+                                            JSONObject data = new JSONObject();
+                                            try {
+                                                data.put("title", "One task is done");
+                                                data.put("alert", ParseUser.getCurrentUser().getEmail() +
+                                                        " mark the task " + w.getName() + " as done.");
+                                                data.put("sender", ParseUser.getCurrentUser().getObjectId());
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+
+                                            ParseObject notify = new ParseObject("Notification");
+                                            notify.put("Title", "Done");
+                                            notify.put("forWork", w.getId());
+                                            notify.addAllUnique("User", list_member);
+
+                                            try {
+                                                notify.put("Message", data.getString("alert"));
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+                                            notify.saveInBackground();
+                                            ParsePush push = new ParsePush();
+                                            push.setData(data);
+                                            push.setQuery(pushQuery);
+                                            push.sendInBackground();
+
+                                        }
                                     }
 
-                                    ParseObject notify = new ParseObject("Notification");
-                                    notify.put("Title", "Done");
-                                    notify.put("forWork", w.getId());
-                                    notify.addAllUnique("User", list_member);
-
-                                    try {
-                                        notify.put("Message", data.getString("alert"));
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-                                    notify.saveInBackground();
-                                    ParsePush push = new ParsePush();
-                                    push.setData(data);
-                                    push.setQuery(pushQuery);
-                                    push.sendInBackground();
                                 } catch (ParseException e) {
                                     e.printStackTrace();
                                 }
+                            } else {
+                                showAlertDialog("Permission", "You have no permission to do that");
                             }
-
-                        } catch (ParseException e) {
-                            e.printStackTrace();
+                            break;
                         }
-                        break;
-                    }
-                    case 5: {
+                        case 5: {
+                            if (w.isForCurrentUser()) {
+                                ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
+                                query.whereEqualTo("objectId", w.getId());
+                                ParseObject object = null;
 
-                        break;
-                    }
-                    case 6: {
+                                try {
+                                    object = query.find().get(0);
 
-                        memberFragment.setData(getAllMemberForWork(w.getId()));
-                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                        ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
-                        ft.replace(R.id.frame, memberFragment);
-                        ft.addToBackStack(null);
-                        ft.commit();
+                                    List<String> list = new ArrayList<>();
+                                    list.add(ParseUser.getCurrentUser().getEmail());
+                                    Collection<String> l = list;
+                                    object.removeAll("LNo", l);
+                                    object.saveInBackground();
+                                    ParseUser.getCurrentUser().put("Notification", false);
+                                    ParseUser.getCurrentUser().saveInBackground();
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                showAlertDialog("Alert", "You are not member in this task");
+                            }
+                            break;
+                        }
+                        case 6: {
 
-                        break;
+                            memberFragment.setData(getAllMemberForWork(w.getId()), w);
+                            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                            ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
+                            ft.replace(R.id.frame, memberFragment);
+                            ft.addToBackStack(null);
+                            ft.commit();
+                            getSupportActionBar().setHomeAsUpIndicator(R.drawable.back);
+                            break;
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            builder.setItems(R.array.workChoice1, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which) {
+                        case 0: {
+                            if (w.isPermission()) {
+                                showInputEmailDialog(w.getId());
+                            } else {
+                                showAlertDialog("Permission", "You have no permission to do that");
+                            }
+                        }
+                        break;
+                        case 1: {
+                            if (w.isPermission()) {
+
+                                new DeleteAllDataForWork(w).execute();
+                            } else {
+                                showAlertDialog("Permission", "You have noo permission to do that");
+                            }
+                            break;
+                        }
+                        case 2: {
+                            new LoadingComment(w).execute();
+                            break;
+                        }
+                        case 3: {
+                            new GetDetailOFWork(w).execute();
+                            break;
+                        }
+                        case 4: {
+                            if (w.isForCurrentUser()) {
+                                ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
+                                query.whereEqualTo("objectId", w.getId());
+                                ParseObject object = null;
+                                try {
+                                    object = query.find().get(0);
+
+                                    if (object.getParseObject("Project").getParseUser("User").getObjectId().equals(ParseUser.getCurrentUser().getObjectId())) {
+                                        if (object.getBoolean("isDone") == true) {
+                                            showAlertDialog(w.getName(), "It is done!");
+                                        } else {
+                                            List<String> l = object.getList("ListMember");
+                                            l.remove(ParseUser.getCurrentUser().getEmail());
+
+                                            Collection<String> list_member = l;
+                                            ParseQuery pushQuery = ParseInstallation.getQuery();
+                                            pushQuery.whereContainedIn("UserEmail", list_member);
+                                            JSONObject data = new JSONObject();
+                                            try {
+                                                data.put("title", "One task is done");
+                                                data.put("alert", "The admin" +
+                                                        " mark the task " + w.getName() + " as done.");
+                                                data.put("sender", ParseUser.getCurrentUser().getObjectId());
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+
+                                            ParseObject notify = new ParseObject("Notification");
+                                            notify.put("Title", "Done");
+                                            notify.put("forWork", w.getId());
+                                            notify.addAllUnique("User", list_member);
+
+                                            try {
+                                                notify.put("Message", data.getString("alert"));
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+                                            notify.saveInBackground();
+                                            ParsePush push = new ParsePush();
+                                            push.setData(data);
+                                            push.setQuery(pushQuery);
+                                            push.sendInBackground();
+                                            object.put("isDone", true);
+                                            object.saveInBackground();
+                                        }
+                                    } else {
+                                        if (object.getBoolean("isDone") == true) {
+                                            showAlertDialog(w.getName(), "It is done!");
+                                        } else {
+
+                                            List<String> l = object.getList("ListMember");
+                                            l.remove(ParseUser.getCurrentUser().getEmail());
+
+                                            Collection<String> list_member = l;
+                                            ParseQuery pushQuery = ParseInstallation.getQuery();
+                                            pushQuery.whereContainedIn("UserEmail", list_member);
+                                            JSONObject data = new JSONObject();
+                                            try {
+                                                data.put("title", "One task is done");
+                                                data.put("alert", ParseUser.getCurrentUser().getEmail() +
+                                                        " mark the task " + w.getName() + " as done.");
+                                                data.put("sender", ParseUser.getCurrentUser().getObjectId());
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+
+                                            ParseObject notify = new ParseObject("Notification");
+                                            notify.put("Title", "Done");
+                                            notify.put("forWork", w.getId());
+                                            notify.addAllUnique("User", list_member);
+
+                                            try {
+                                                notify.put("Message", data.getString("alert"));
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
+                                            notify.saveInBackground();
+                                            ParsePush push = new ParsePush();
+                                            push.setData(data);
+                                            push.setQuery(pushQuery);
+                                            push.sendInBackground();
+
+                                        }
+                                    }
+
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                showAlertDialog("Permission", "You have no permission to do that");
+                            }
+                            break;
+                        }
+                        case 5: {
+                            if (w.isForCurrentUser()) {
+                                ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
+                                query.whereEqualTo("objectId", w.getId());
+                                ParseObject object = null;
+
+                                try {
+                                    object = query.find().get(0);
+                                    object.addUnique("LNo", ParseUser.getCurrentUser().getEmail());
+                                    object.saveInBackground();
+                                    ParseUser.getCurrentUser().put("Notification", true);
+                                    ParseUser.getCurrentUser().saveInBackground();
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                showAlertDialog("Alert", "You are not member in this task");
+                            }
+                            break;
+                        }
+                        case 6: {
+
+                            memberFragment.setData(getAllMemberForWork(w.getId()), w);
+                            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                            ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
+                            ft.replace(R.id.frame, memberFragment);
+                            ft.addToBackStack(null);
+                            ft.commit();
+                            getSupportActionBar().setHomeAsUpIndicator(R.drawable.back);
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
 
         AlertDialog dialog = builder.create();
         dialog.show();
@@ -1045,7 +1306,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         } else {
 
             if (listParseProject.get(index).getParseUser("User").getEmail().equals(currentUser.getEmail())) {
-                showAlertDialog("Nothing to do", "He is you?");
+                //showAlertDialog("Nothing to do", "He is you?");
             } else {
                 showChoiceDialogForContact(index);
             }
@@ -1091,18 +1352,79 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         } catch (ParseException e) {
             e.printStackTrace();
         }
-
         return list;
+    }
 
+    private class LoadingComment extends AsyncTask<Void, Void, Void> {
+
+        ProgressDialog progressDialog;
+        ArrayList<Comment> list = new ArrayList<>();
+        Work word;
+
+        public LoadingComment(Work word) {
+            this.word = word;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            list = getAllCommentForWork(word.getId());
+            publishProgress();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MainActivity.this,
+                    R.style.AppTheme_Dark_Dialog);
+            progressDialog.setIndeterminate(true);
+            progressDialog.setMessage("Loading comment...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            commentFragment.setData(list, word);
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
+            ft.replace(R.id.frame, commentFragment);
+            ft.addToBackStack(null);
+            ft.commit();
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.back);
+            progressDialog.dismiss();
+        }
     }
 
     private ArrayList<Comment> getAllCommentForWork(String workId) {
 
+        ParseQuery<ParseObject> workQuery = ParseQuery.getQuery("Work");
+        workQuery.whereEqualTo("objectId", workId);
+        ParseObject object;
         ParseQuery<ParseObject> cmt = ParseQuery.getQuery("Comment");
         cmt.whereEqualTo("forWork", workId);
         List<ParseObject> objects;
         ArrayList<Comment> list = new ArrayList<>();
         try {
+            object = workQuery.find().get(0);
+
+            List<String> l = object.getList("listNotify");
+
+            if (l != null && l.contains(ParseUser.getCurrentUser().getEmail())) {
+                List<String> email = new ArrayList<>();
+                email.add(ParseUser.getCurrentUser().getEmail());
+                Collection<String> c = email;
+                object.removeAll("listNotify", c);
+            } else {
+
+            }
+            object.saveInBackground();
             objects = cmt.find();
 
             ParseUser user;
@@ -1223,6 +1545,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                     data.put("title", "Delete");
                     data.put("alert", "I delete a project");
                     data.put("id", listParseProject.get(index).getObjectId());
+                    data.put("sender", ParseUser.getCurrentUser().getObjectId());
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -1279,6 +1602,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                                 JSONObject data = new JSONObject();
                                 try {
                                     data.put("title", "Invite");
+                                    data.put("sender", ParseUser.getCurrentUser().getObjectId());
                                     data.put("alert", currentUser.getEmail() + " want to invite you to their project");
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -1429,6 +1753,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.replace(R.id.frame, projectFragment);
             ft.commit();
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
         }
     }
 
@@ -1452,6 +1777,74 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         }
 
         return list;
+    }
+
+    private class GetDetailOFWork extends AsyncTask<Void, Void, Void> {
+
+        ProgressDialog progressDialog;
+        Work w;
+        ArrayList<String> list = new ArrayList<>();
+        ParseObject work;
+
+        public GetDetailOFWork(Work w) {
+            this.w = w;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
+            query.whereEqualTo("objectId", w.getId());
+            try {
+                work = query.find().get(0);
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM");
+                list.add(work.getString("Name"));
+                list.add(work.getString("Description"));
+                list.add(String.valueOf(work.getInt("Member")));
+                if (work.getBoolean("isDone") == true) {
+                    list.add("Yes");
+                } else {
+                    list.add("No");
+                }
+                list.add(sdf.format(work.getCreatedAt()));
+                list.add(sdf.format(work.getDate("DeadLine")));
+
+
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            publishProgress();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MainActivity.this,
+                    R.style.AppTheme_Dark_Dialog);
+            progressDialog.setIndeterminate(true);
+            progressDialog.setMessage("Loading...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            workDetail.setData(list, w.isForCurrentUser(), work);
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
+            ft.replace(R.id.frame, workDetail);
+            ft.addToBackStack(null);
+            ft.commit();
+            addBtn.setVisibility(View.GONE);
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.back);
+            progressDialog.dismiss();
+        }
     }
 
     private ArrayList<String> getDetailOfWork(String id) {
@@ -1555,7 +1948,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         final String phone = listParseProject.get(index).getString("PhoneNumber");
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Contact");
-        builder.setItems(R.array.Contact, new DialogInterface.OnClickListener() {
+        builder.setIcon(R.drawable.contact);
+        builder.setItems(R.array.Contact1, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {

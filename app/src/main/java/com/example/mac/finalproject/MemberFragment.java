@@ -18,9 +18,19 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.parse.ParseException;
+import com.parse.ParseInstallation;
+import com.parse.ParseObject;
+import com.parse.ParsePush;
+import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -32,8 +42,10 @@ public class MemberFragment extends Fragment {
     private boolean hide = true;
     @Bind(R.id.listMember)
     ListView lv;
+    private Work w;
 
-    public void setData(ArrayList<Member> list) {
+    public void setData(ArrayList<Member> list, Work w) {
+        this.w = w;
         this.list = list;
     }
 
@@ -52,10 +64,11 @@ public class MemberFragment extends Fragment {
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 
                 if (list.get(position).getEmail().equals(ParseUser.getCurrentUser().getEmail())) {
-                    showAlertDialog("Nothing to do", "He is you?");
+                    //showAlertDialog("Nothing to do", "He is you?");
                 } else  {
                     showChoiceDialogForContact(position);
                 }
+
 
 
                 return false;
@@ -107,7 +120,7 @@ public class MemberFragment extends Fragment {
                                 showAlertDialog("Error", "There is error occur when ...");
                             }
                         } else {
-                             showAlertDialog("No sim", "This device hasn't have sim yet");
+                            showAlertDialog("No sim", "This device hasn't have sim yet");
                         }
 
                     }
@@ -137,6 +150,48 @@ public class MemberFragment extends Fragment {
                         startActivity(emailIntent);
                         break;
                     }
+                    case 3: {
+                        if (w.isPermission()) {
+                            ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
+                            query.whereEqualTo("objectId", w.getId());
+                            ParseObject object;
+
+                            try {
+                                object = query.find().get(0);
+
+                                List<String> listEmail = new ArrayList<>();
+                                listEmail.add(list.get(index).getEmail());
+                                Collection<String> list_member = listEmail;
+                                object.removeAll("ListMember", list_member);
+                                object.removeAll("LNo", list_member);
+                                object.saveInBackground();
+                                ParseQuery pushQuery = ParseInstallation.getQuery();
+                                pushQuery.whereEqualTo("UserEmail", list.get(index).getEmail());
+                                JSONObject data = new JSONObject();
+                                try {
+                                    data.put("title", "Delete");
+                                    data.put("alert", ParseUser.getCurrentUser().getEmail() + " remove you to their project");
+                                    data.put("sender", ParseUser.getCurrentUser().getObjectId());
+                                    data.put("id", object.getParseObject("Project").getObjectId());
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                                // Send push notification to query
+                                ParsePush push = new ParsePush();
+                                push.setQuery(pushQuery); // Set our Installation query
+                                push.setData(data);
+                                push.sendInBackground();
+
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+
+                        } else {
+                            showAlertDialog("Permission", "You have no permission to do that");
+                        }
+                        break;
+                    }
                 }
             }
         });
@@ -156,4 +211,5 @@ public class MemberFragment extends Fragment {
         super.onResume();
         hide = false;
     }
+
 }

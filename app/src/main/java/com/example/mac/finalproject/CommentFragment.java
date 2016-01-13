@@ -4,12 +4,16 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.parse.ParseException;
 import com.parse.ParseFile;
@@ -47,13 +51,41 @@ public class CommentFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, final Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.comment_fragment, container, false);
         ButterKnife.bind(this, v);
+
+        edt.setKeepScreenOn(true);
+        edt.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.toString().equals("")) {
+                    send.setImageResource(R.drawable.like);
+                } else {
+                    send.setImageResource(R.drawable.send);
+                }
+            }
+        });
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String cmt = edt.getText().toString();
+                String cmt;
+                send.setImageResource(R.drawable.like);
+                if (!edt.getText().toString().equals("")) {
+                    cmt = edt.getText().toString();
+                } else {
+                    cmt = "Like";
+                }
                 edt.setText("");
                 Date d1 = new Date();
                 Comment newComment = new Comment();
@@ -87,20 +119,28 @@ public class CommentFragment extends Fragment {
                 try {
 
                     ParseObject ob = obs.find().get(0);
-                    List<String> l = ob.getList("ListMember");
-                    l.remove(ParseUser.getCurrentUser().getEmail());
+                    //ob.put("Comment", true)
 
-                    Collection<String> list_member = l;
+                    List<String> query = ob.getList("LNo");
+                    if (query.contains(ParseUser.getCurrentUser().getEmail())) {
+                        query.remove(ParseUser.getCurrentUser().getEmail());
+                    }
+
+                    ob.addAllUnique("listNotify", query);
+
+                    Collection<String> list_member = query;
                     ParseQuery pushQuery = ParseInstallation.getQuery();
                     pushQuery.whereContainedIn("UserEmail", list_member);
 
                     JSONObject data = new JSONObject();
                     try {
                         data.put("title", "Comment");
-                        data.put("alert", "I comment in a work");
+                        data.put("alert", ParseUser.getCurrentUser().getEmail() + " comment in a work");
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+
+                    ob.saveInBackground();
 
                     ParsePush push = new ParsePush();
                     push.setData(data);

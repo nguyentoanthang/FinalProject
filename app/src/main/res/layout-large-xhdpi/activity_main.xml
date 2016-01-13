@@ -43,7 +43,8 @@
                     android:id="@+id/add"
                     android:background="@null"
                     android:layout_alignParentRight="true"
-                    android:layout_centerVertical="true"/>
+                    android:layout_centerVertical="true"
+                    android:layout_marginRight="20dp"/>
             </RelativeLayout>
 
         </android.support.v7.widget.Toolbar>

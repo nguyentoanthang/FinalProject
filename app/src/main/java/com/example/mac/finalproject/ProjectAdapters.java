@@ -35,9 +35,11 @@ public class ProjectAdapters extends RecyclerView.Adapter<ProjectAdapters.Projec
         projectViewHolder.sum.setText(String.valueOf(currentProject.getNumOfWork()));
         projectViewHolder.host.setImageBitmap(currentProject.getHost());
         if (currentProject.getNumOfWork() == 0) {
-
+            projectViewHolder.progressBar.setMax(100);
+            projectViewHolder.progressBar.setProgress(0);
         } else {
-            projectViewHolder.progressBar.setProgress(currentProject.getNumOfDone() / currentProject.getNumOfWork());
+            projectViewHolder.progressBar.setMax(currentProject.getNumOfWork());
+            projectViewHolder.progressBar.setProgress(currentProject.getNumOfDone());
         }
 
 

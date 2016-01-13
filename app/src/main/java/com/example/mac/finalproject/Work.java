@@ -4,6 +4,10 @@ import java.util.Date;
 
 public class Work {
 
+    private boolean comment;
+
+    private String description;
+
     private boolean forCurrentUser;
 
     private boolean permission;
@@ -72,5 +76,21 @@ public class Work {
 
     public void setPermission(boolean permission) {
         this.permission = permission;
+    }
+
+    public boolean isComment() {
+        return comment;
+    }
+
+    public void setComment(boolean comment) {
+        this.comment = comment;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

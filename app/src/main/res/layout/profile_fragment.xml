@@ -13,7 +13,7 @@
             android:layout_height="100dp"
             android:src="@drawable/profile_image"
             android:layout_centerVertical="true"
-            android:layout_marginLeft="40dp"
+            android:layout_marginLeft="20dp"
             android:id="@+id/img"/>
 
         <TextView

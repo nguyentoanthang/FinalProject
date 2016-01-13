@@ -158,6 +158,7 @@ public class SignupActivity extends AppCompatActivity {
             newUser.setEmail(email);
             newUser.setPassword(password);
             newUser.put("Name", name);
+            newUser.put("Notification", true);
             newUser.signUpInBackground(new SignUpCallback() {
                 @Override
                 public void done(ParseException e) {

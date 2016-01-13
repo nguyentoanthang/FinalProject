@@ -40,7 +40,7 @@ public class CommentAdapter extends ArrayAdapter<Comment> {
         comment.setText(cmt.getCmt());
 
         if (cmt.getTime() < 60) {
-            time.setText(String.valueOf(cmt.getTime()) + "s ago");
+            time.setText("just now");
         } else if (cmt.getTime() >= 60) {
             String val = String.valueOf(cmt.getTime()/60);
             time.setText(val + "m ago");

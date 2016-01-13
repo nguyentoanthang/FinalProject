@@ -1,7 +1,9 @@
 package com.example.mac.finalproject;
 
+import android.app.DatePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -9,13 +11,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ListView;
 
 import com.parse.ParseObject;
 import com.parse.ParseUser;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -64,11 +71,45 @@ public class ProjectDetail extends Fragment {
                     if (permission) {
                         showInputDialog(project);
                     }
+                } else if (position == 6) {
+                    if (permission) {
+                        showDatePickerDialog(project);
+                    }
                 }
+
                 return false;
             }
         });
         return v;
+
+    }
+
+    private void showDatePickerDialog(final ParseObject project) {
+        final Calendar c = Calendar.getInstance();
+        int mYear = c.get(Calendar.YEAR);
+        int mMonth = c.get(Calendar.MONTH);
+        int mDay = c.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog dpd = new DatePickerDialog(getActivity(),
+                new DatePickerDialog.OnDateSetListener() {
+
+                    @Override
+                    public void onDateSet(DatePicker view, int year,
+                                          int monthOfYear, int dayOfMonth) {
+
+                        Calendar C = new GregorianCalendar(year, monthOfYear, dayOfMonth);
+                        Date d = C.getTime();
+
+                        project.put("Finish", d);
+                        project.saveInBackground();
+
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM");
+
+                        list.set(6, sdf.format(d));
+                        RefreshData();
+                    }
+                }, mYear, mMonth, mDay);
+        dpd.show();
 
     }
 

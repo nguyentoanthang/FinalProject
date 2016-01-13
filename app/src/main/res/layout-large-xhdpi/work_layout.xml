@@ -23,6 +23,26 @@
             android:background="@color/primary_dark"/>
 
         <ImageButton
+            android:layout_width="27dp"
+            android:layout_height="27dp"
+            android:src="@drawable/have_comment"
+            android:id="@+id/have_comment"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="3dp"
+            android:visibility="gone"/>
+
+        <TextView
+            android:layout_width="400dp"
+            android:layout_height="95dp"
+            android:layout_below="@id/nameWork"
+            android:layout_marginLeft="30dp"
+            android:layout_marginTop="10dp"
+            android:id="@+id/description"
+            android:textSize="20sp"
+            android:textColor="@color/black"/>
+
+        <ImageButton
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:src="@drawable/choice"

@@ -28,7 +28,7 @@ public class ProjectFragment extends Fragment {
     private ArrayList<Project> listProject = null;
     private ProjectAdapters myAdapter = null;
     private final String TAG = "myTAG";
-    private boolean hide;
+    private boolean hide = true;
 
     public void setList(ArrayList<Project> list) {
         this.listProject = list;

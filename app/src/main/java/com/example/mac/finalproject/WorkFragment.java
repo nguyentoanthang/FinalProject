@@ -10,7 +10,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.ParseUser;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -80,5 +86,31 @@ public class WorkFragment extends Fragment {
 
     public void removeItem(Work item) {
         listWork.remove(item);
+    }
+
+    public void getComment() {
+        for (int i = 0; i < listWork.size(); i++) {
+            ParseQuery<ParseObject> query = ParseQuery.getQuery("Work");
+            query.whereEqualTo("objectId", listWork.get(i).getId());
+
+            ParseObject object;
+            try {
+                object = query.find().get(0);
+                Work w = listWork.get(i);
+
+                List<String> l = object.getList("listNotify");
+
+                if (l != null && l.contains(ParseUser.getCurrentUser().getEmail())) {
+                    w.setComment(true);
+                } else {
+                    w.setComment(false);
+                }
+
+                w.setDescription(object.getString("Description"));
+                listWork.set(i, w);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

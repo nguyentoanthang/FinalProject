@@ -34,6 +34,12 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder
     public void onBindViewHolder(WorkViewHolder projectViewHolder, int i) {
         final Work currentWork = contactList.get(i);
 
+        if (currentWork.isComment()) {
+            projectViewHolder.have_cmt.setVisibility(View.VISIBLE);
+        } else {
+            projectViewHolder.have_cmt.setVisibility(View.GONE);
+        }
+
 
         final int index = i;
         // update ui
@@ -44,6 +50,8 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder
         if (currentWork.isDone()) {
             projectViewHolder.name.setBackgroundResource(R.color.green);
         }
+
+        projectViewHolder.des.setText(currentWork.getDescription());
 
         projectViewHolder.choice.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -67,12 +75,15 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkViewHolder
 
         protected TextView name;
         protected ImageButton choice;
+        protected ImageButton have_cmt;
+        protected TextView des;
 
         public WorkViewHolder(View v) {
             super(v);
             name = (TextView) v.findViewById(R.id.nameWork);
             choice = (ImageButton) v.findViewById(R.id.choice);
-
+            des = (TextView) v.findViewById(R.id.description);
+            have_cmt = (ImageButton) v.findViewById(R.id.have_comment);
         }
 
     }

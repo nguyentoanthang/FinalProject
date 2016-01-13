@@ -243,6 +243,7 @@ public class ProfileFragment extends Fragment {
                 try {
                     work = workQuery.find().get(0);
                     work.addUnique("ListMember", email);
+                    work.addUnique("LNo", email);
                     work.increment("Member");
                     work.saveInBackground();
 

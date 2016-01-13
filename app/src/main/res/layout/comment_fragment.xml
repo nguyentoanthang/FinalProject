@@ -4,11 +4,12 @@
     android:layout_height="match_parent">
 
     <EditText
-        android:layout_width="330dp"
+        android:layout_width="320dp"
         android:layout_height="wrap_content"
         android:id="@+id/input_cmt"
         android:layout_alignParentBottom="true"
-        android:hint="COMMENT ..."/>
+        android:hint="COMMENT ..."
+        android:layout_marginLeft="10dp"/>
 
     <ListView
         android:layout_width="match_parent"
@@ -21,7 +22,7 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:id="@+id/send"
-        android:src="@drawable/arrow"
+        android:src="@drawable/like"
         android:background="@null"
         android:layout_toRightOf="@id/input_cmt"
         android:layout_alignParentBottom="true"/>

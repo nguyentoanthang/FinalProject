@@ -8,18 +8,17 @@
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:id="@+id/iconforprofile"
-        android:layout_centerVertical="true"
-        android:layout_marginLeft="20dp"/>
+        android:layout_centerVertical="true" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="280dp"
+        android:gravity="right"
         android:layout_height="wrap_content"
         android:id="@+id/detail"
         android:text="Text"
         android:textSize="20sp"
         android:textColor="@color/black"
         android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"
-        android:layout_marginRight="20dp"/>
+        android:layout_centerVertical="true" />
 
 </RelativeLayout>

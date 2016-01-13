@@ -3,20 +3,18 @@ package com.example.mac.finalproject;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.net.Uri;
-import android.support.v4.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -28,23 +26,20 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.mikepenz.crossfader.Crossfader;
+import com.mikepenz.crossfader.util.UIUtils;
 import com.mikepenz.materialdrawer.AccountHeader;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.MiniDrawer;
-import com.mikepenz.materialdrawer.adapter.BaseDrawerAdapter;
 import com.mikepenz.materialdrawer.model.DividerDrawerItem;
-import com.mikepenz.materialdrawer.model.MiniDrawerItem;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IProfile;
-import com.mikepenz.crossfader.util.UIUtils;
-import com.parse.DeleteCallback;
-import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseInstallation;
@@ -59,12 +54,12 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
@@ -77,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
     @Bind(R.id.toolbar) Toolbar toolbar;
     @Bind(R.id.title) TextView title;
     @Bind(R.id.add) ImageButton addBtn;
+    //
+    // @Bind(R.id.menu) ImageButton menuBtn;
     private static final int REQUEST_LOGIN = 0;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_IMAGE_SELECT = 2;
@@ -109,6 +106,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
         actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setDisplayShowCustomEnabled(true);
 
@@ -129,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
             public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
                 projectDrawerItem.withSetSelected(false);
                 if (profileFragment.isHide()) {
+                    addBtn.setVisibility(View.GONE);
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     ft.replace(R.id.frame, profileFragment);
                     ft.addToBackStack(null);
@@ -142,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
             @Override
             public boolean onItemClick(View view, int i, IDrawerItem iDrawerItem) {
                 profileDrawerItem.withSetSelected(false);
+                addBtn.setVisibility(View.VISIBLE);
                 if (projectFragment.isHide()) {
                     if (!profileFragment.isLoading()) {
                         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
@@ -765,12 +765,14 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                         break;
                     }
                     case 2: {
-                        projectDetail.setData(getDetailOfProject(listParseProject.get(index)));
+                        boolean permission = ParseUser.getCurrentUser().getObjectId().equals(listParseProject.get(index).getParseUser("User").getObjectId());
+                        projectDetail.setData(getDetailOfProject(listParseProject.get(index)), listParseProject.get(index));
                         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                         ft.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right, R.anim.pop_in, R.anim.pop_out);
                         ft.replace(R.id.frame, projectDetail);
                         ft.addToBackStack(null);
                         ft.commit();
+                        addBtn.setVisibility(View.GONE);
                         break;
                     }
                 }
@@ -889,6 +891,9 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        if (projectFragment.isHide() == false) {
+            addBtn.setVisibility(View.VISIBLE);
+        }
     }
 
 
@@ -947,6 +952,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
                         ft.replace(R.id.frame, workDetail);
                         ft.addToBackStack(null);
                         ft.commit();
+                        addBtn.setVisibility(View.GONE);
                         break;
                     }
                     case 4: {
@@ -1034,6 +1040,7 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         if (v.getId() == R.id.choice) {
             showChoiceDialog(index);
         } else if(v.getId() == R.id.arrow) {
+            addBtn.setVisibility(View.GONE);
             new GetWork().execute(index);
         } else {
 
@@ -1251,6 +1258,8 @@ public class MainActivity extends AppCompatActivity implements AdapterCommunicat
         alertDialog.setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+
+                dialog.dismiss();
                 if (ParseUser.getCurrentUser().getUsername().equals(projectName.getText().toString())) {
                     showAlertDialog("Nothing to do", "it you?");
                 } else {

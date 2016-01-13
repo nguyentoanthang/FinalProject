@@ -16,6 +16,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/project1"
+                    android:id="@+id/imageProject"
+                    android:layout_centerVertical="true"/>
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -25,7 +32,8 @@
                     android:textSize="25sp"
                     android:id="@+id/title"
                     android:layout_centerInParent="true"
-                    android:gravity="center"/>
+                    android:gravity="center"
+                    android:visibility="gone"/>
 
                 <ImageButton
                     android:layout_width="wrap_content"
@@ -35,9 +43,7 @@
                     android:id="@+id/add"
                     android:background="@null"
                     android:layout_alignParentRight="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginRight="20dp"/>
-
+                    android:layout_centerVertical="true"/>
             </RelativeLayout>
 
         </android.support.v7.widget.Toolbar>

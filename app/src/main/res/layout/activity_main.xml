@@ -15,7 +15,14 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
-
+                
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/project1"
+                    android:id="@+id/imageProject"
+                    android:layout_centerInParent="true"/>
+                
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -25,7 +32,8 @@
                     android:textSize="25sp"
                     android:gravity="center"
                     android:id="@+id/title"
-                    android:layout_centerInParent="true"/>
+                    android:layout_centerInParent="true"
+                    android:visibility="gone"/>
 
                 <ImageButton
                     android:layout_width="wrap_content"

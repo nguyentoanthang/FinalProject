@@ -3,7 +3,6 @@ package com.example.mac.finalproject;
 
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -22,6 +21,7 @@ import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -45,6 +45,11 @@ public class ProfileFragment extends Fragment {
     public PopupWindow popupWindow;
     NotificationAdapter notificationAdapter;
     private boolean loading = false;
+
+    public ProfileFragment() {
+        this.popupWindow = new PopupWindow();
+
+    }
 
     public void setData(String name, String email, Bitmap bitmap, ArrayList<String> list) {
         this.username = name;
@@ -140,7 +145,9 @@ public class ProfileFragment extends Fragment {
 
         LayoutInflater layoutInflater = getActivity().getLayoutInflater();
         final View popupView = layoutInflater.inflate(R.layout.popup_notification, null);
-        popupWindow = new PopupWindow(popupView, 530, 150);
+        popupWindow.setContentView(popupView);
+        popupWindow.setWidth(530);
+        popupWindow.setHeight(300);
         final ListView listViewNotify = (ListView) popupView.findViewById(R.id.listNotify);
         final TextView no_notify = (TextView) popupView.findViewById(R.id.no_notify);
 
